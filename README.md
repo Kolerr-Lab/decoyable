@@ -3,10 +3,11 @@
 [![CI](https://github.com/Kolerr-Lab/supper-decoyable/actions/workflows/ci.yml/badge.svg)](https://github.com/Kolerr-Lab/supper-decoyable/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
-[![PyPI](https://img.shields.io/pypi/v/decoyable.svg)](https://pypi.org/project/decoyable/)
-[![Downloads](https://img.shields.io/pypi/dm/decoyable.svg)](https://pypi.org/project/decoyable/)
+[![Version](https://img.shields.io/badge/version-1.0.4-blue.svg)](https://github.com/Kolerr-Lab/supper-decoyable/releases)
+[![PyPI](https://img.shields.io/badge/PyPI-coming%20soon-orange.svg)](https://github.com/Kolerr-Lab/supper-decoyable)
 [![Security](https://img.shields.io/badge/security-zero--real--vulns-brightgreen.svg)](SECURITY.md)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](docker-compose.yml)
+[![AI-Powered](https://img.shields.io/badge/AI-powered-purple.svg)](README_AI_FEATURES.md)
 
 **Stop security vulnerabilities before they reach production.**
 
