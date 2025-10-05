@@ -219,6 +219,173 @@ def run_scan(args: argparse.Namespace) -> int:
         return 1
 
 
+def run_ai_analyze(config: dict[str, Any], args: argparse.Namespace) -> int:
+    """
+    Run AI-powered comprehensive security analysis (WOW MODE!).
+    Returns an exit code (0 for success).
+    """
+    log = logging.getLogger(__name__)
+    
+    print("\n" + "="*80)
+    print("🚀 DECOYABLE AI-POWERED SECURITY ANALYSIS".center(80))
+    print("="*80 + "\n")
+    
+    target_path = getattr(args, "path", ".")
+    deploy_defense = getattr(args, "deploy_defense", False)
+    show_dashboard = getattr(args, "dashboard", False)
+    
+    try:
+        import asyncio
+        from decoyable.orchestrator import get_orchestrator
+        
+        # Get orchestrator instance
+        orchestrator = get_orchestrator()
+        
+        # Run comprehensive analysis
+        print("🔍 Initializing AI systems...")
+        print("   ✓ Predictive Threat Intelligence")
+        print("   ✓ Behavioral Anomaly Detection")
+        print("   ✓ Adaptive Honeypot System")
+        print("   ✓ Attack Pattern Learning\n")
+        
+        # Run analysis
+        loop = asyncio.get_event_loop()
+        report = loop.run_until_complete(orchestrator.analyze_codebase_comprehensive(target_path))
+        
+        # Display results
+        print("\n" + "="*80)
+        print(f"📊 ANALYSIS RESULTS - Risk Level: {report['risk_emoji']} {report['overall_risk_level']}")
+        print("="*80)
+        
+        print(f"\n📈 Overall Risk Score: {report['overall_risk_score']:.1f}")
+        print(f"⏱️  Analysis Duration: {report['analysis_duration_seconds']:.2f}s")
+        
+        summary = report['summary']
+        print(f"\n🔍 Traditional Vulnerabilities Found: {summary['total_vulnerabilities']}")
+        print(f"   ⚠️  Critical: {summary['critical_vulnerabilities']}")
+        print(f"   🔴 High: {summary['high_vulnerabilities']}")
+        
+        print(f"\n🤖 AI Threat Predictions: {summary['predicted_threats']}")
+        print(f"⛓️  Exploit Chains Detected: {summary['exploit_chains_detected']}")
+        
+        # Show top threat predictions
+        if report.get('threat_predictions'):
+            print("\n" + "-"*80)
+            print("🎯 TOP PREDICTED THREATS:")
+            print("-"*80)
+            for i, pred in enumerate(report['threat_predictions'][:5], 1):
+                print(f"\n{i}. {pred['threat_type'].upper()}")
+                print(f"   Probability: {pred['probability']} | Confidence: {pred['confidence']}")
+                print(f"   Severity: {pred['severity']} | Risk Score: {pred['risk_score']:.1f}")
+                print(f"   Time to Exploitation: {pred['time_to_exploitation']}")
+                print(f"   Top Recommendations:")
+                for rec in pred['recommendations']:
+                    print(f"      • {rec}")
+        
+        # Show exploit chains
+        if report.get('exploit_chains'):
+            print("\n" + "-"*80)
+            print("⛓️  CRITICAL EXPLOIT CHAINS:")
+            print("-"*80)
+            for chain in report['exploit_chains']:
+                print(f"\n🔴 {chain['severity']}: {chain['impact']}")
+                print(f"   File: {chain['file_path']}")
+                print(f"   Chain: {' → '.join(chain['vulnerability_types'])}")
+                print(f"   Combined Risk Score: {chain['combined_risk_score']}")
+                print(f"   Exploitation Steps:")
+                for step in chain['exploitation_steps']:
+                    print(f"      {step}")
+        
+        # Show defense recommendations
+        defense = report.get('defense_recommendations', {})
+        if defense:
+            print("\n" + "="*80)
+            print("🛡️  DEFENSE STRATEGY")
+            print("="*80)
+            
+            if defense.get('immediate_actions'):
+                print("\n🚨 IMMEDIATE ACTIONS:")
+                for action in defense['immediate_actions']:
+                    print(f"   • {action}")
+            
+            if defense.get('short_term_fixes'):
+                print("\n⚡ SHORT-TERM FIXES:")
+                for fix in defense['short_term_fixes'][:5]:
+                    print(f"   • {fix}")
+            
+            if defense.get('honeypot_deployment'):
+                honeypot = defense['honeypot_deployment']
+                if honeypot.get('recommended'):
+                    print(f"\n🍯 HONEYPOT DEPLOYMENT RECOMMENDED:")
+                    print(f"   Type: {honeypot.get('type')}")
+                    print(f"   Targets: {', '.join(honeypot.get('targets', [])[:3])}")
+        
+        # Show dashboard if requested
+        if show_dashboard:
+            print("\n" + "="*80)
+            print("📊 LIVE SECURITY DASHBOARD")
+            print("="*80)
+            dashboard = loop.run_until_complete(orchestrator.get_security_dashboard_data())
+            
+            print(f"\n{dashboard['overall_status']}")
+            print(f"Defense Score: {dashboard['defense_score']:.1f}/100")
+            
+            metrics = dashboard['metrics']
+            print(f"\n📈 METRICS:")
+            print(f"   🛡️  Attacks Blocked: {metrics['total_attacks_blocked']}")
+            print(f"   🔮 Threats Predicted: {metrics['threats_predicted']}")
+            print(f"   ⏰ Attacker Time Wasted: {metrics['attacker_time_wasted_hours']:.1f} hours")
+            print(f"   🍯 Active Honeypots: {metrics['active_honeypots']}")
+            print(f"   👤 Unique Attackers Tracked: {metrics['unique_attackers_tracked']}")
+            print(f"   🚨 Anomalies Detected: {metrics['behavioral_anomalies_detected']}")
+            print(f"   💀 Potential Zero-Days: {metrics['potential_zero_days']}")
+            
+            print(f"\n🤖 AI SYSTEMS STATUS:")
+            for system, status in dashboard['ai_systems_status'].items():
+                print(f"   {status} {system.replace('_', ' ').title()}")
+        
+        # Deploy defense if requested
+        if deploy_defense and report.get('exploit_chains'):
+            print("\n" + "="*80)
+            print("🚀 DEPLOYING ACTIVE DEFENSE MEASURES...")
+            print("="*80)
+            
+            # Simulate deployment
+            attack_data = {
+                "ip_address": "192.168.1.100",
+                "attack_type": "exploit_chain_attempt",
+                "tools": ["automated_scanner"],
+                "target": report['exploit_chains'][0]['file_path'],
+                "duration": 300,
+            }
+            
+            defense_result = loop.run_until_complete(orchestrator.deploy_active_defense(attack_data))
+            
+            print(f"\n✅ {defense_result['status'].upper()}")
+            print(f"\n👤 Attacker Profile:")
+            profile = defense_result['attacker_profile']
+            print(f"   Skill Level: {profile['skill_level']}")
+            print(f"   Sophistication: {profile['sophistication_score']:.1%}")
+            
+            honeypot_info = defense_result['honeypot_deployed']
+            print(f"\n🍯 Honeypot Deployed:")
+            print(f"   Type: {honeypot_info['type']}")
+            print(f"   Complexity: {honeypot_info['complexity']}")
+            print(f"   Fake Vulnerabilities: {honeypot_info['fake_vulnerabilities']}")
+            print(f"\n🛡️  Countermeasures: {'ACTIVE' if defense_result['countermeasures_active'] else 'INACTIVE'}")
+        
+        print("\n" + "="*80)
+        print("✨ ANALYSIS COMPLETE! Your security is now AI-enhanced! ✨".center(80))
+        print("="*80 + "\n")
+        
+        return 0
+        
+    except Exception as exc:
+        log.exception(f"AI analysis failed: {exc}")
+        print(f"\n❌ Error: {exc}")
+        return 1
+
+
 def run_fix_command(config: dict[str, Any], args: argparse.Namespace) -> int:
     """
     Apply automated fixes for security issues.
@@ -408,6 +575,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     tst = sub.add_parser("test", help="Run self-test checks")
     tst.add_argument("--fast", action="store_true", help="Run a fast subset of tests")
 
+    # ai-analyze command (NEW!)
+    ai_analyze = sub.add_parser("ai-analyze", help="🚀 AI-powered comprehensive security analysis (WOW MODE!)")
+    ai_analyze.add_argument("path", type=str, help="Path to analyze")
+    ai_analyze.add_argument("--deploy-defense", action="store_true", help="Deploy active defense measures")
+    ai_analyze.add_argument("--dashboard", action="store_true", help="Show live security dashboard")
+
     return p
 
 
@@ -444,6 +617,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_main_task(config, args)
         elif cmd == "fix":
             return run_fix_command(config, args)
+        elif cmd == "ai-analyze":
+            return run_ai_analyze(config, args)
         elif cmd == "test":
             log.info("Running self-tests (fast=%s)", getattr(args, "fast", False))
             # Simple internal checks
