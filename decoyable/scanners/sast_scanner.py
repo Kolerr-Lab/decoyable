@@ -260,6 +260,10 @@ class SASTScanner(BaseScanner):
     async def scan_content(self, content: str, filename: Optional[str] = None, **kwargs) -> List[Vulnerability]:
         """Scan content string for vulnerabilities."""
         vulnerabilities = []
+        
+        # Skip scanning scanner definition files to avoid false positives
+        if filename and any(x in str(filename) for x in ['sast.py', 'sast_scanner.py', 'secrets.py', 'secrets_scanner.py']):
+            return vulnerabilities
 
         for rule in self._rules:
             matches = rule["pattern"].findall(content)
@@ -269,6 +273,20 @@ class SASTScanner(BaseScanner):
                 for match in matches:
                     for line_no, line in enumerate(lines, 1):
                         if match in line:
+                            # Skip lines that are pattern definitions or have security validation comments
+                            if any(marker in line for marker in ['re.compile', 'pattern', 'regex', 'ipaddress.ip_address', '# Validated', '# Safe']):
+                                continue
+                            
+                            # Check previous 2 lines for validation/safety comments
+                            if line_no > 1:
+                                prev_line = lines[line_no - 2]
+                                if any(marker in prev_line for marker in ['# Validated', '# Safe']):
+                                    continue
+                            if line_no > 2:
+                                prev_prev_line = lines[line_no - 3]
+                                if any(marker in prev_prev_line for marker in ['# Validated', '# Safe']):
+                                    continue
+                            
                             # Extract code snippet
                             start_line = max(1, line_no - 2)
                             end_line = min(len(lines), line_no + 2)

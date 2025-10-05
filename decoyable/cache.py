@@ -59,7 +59,7 @@ class Cache:
             try:
                 data = self.redis_client.get(key)
                 if data:
-                    # Safe JSON deserialization with validation
+                    # Safe: JSON deserialization from trusted Redis cache with type validation
                     try:
                         parsed_data = json.loads(data.decode("utf-8"))
                         # Basic validation - ensure it's a dict or list

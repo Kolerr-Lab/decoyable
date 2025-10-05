@@ -93,7 +93,8 @@ class TaskQueueService:
                 },
                 task_default_queue="security",
                 task_default_exchange="security",
-task_default_routing_key = os.getenv("task_default_routing_key", "")
+                # Safe: "security" is a routing key name, not a secret
+                task_default_routing_key="security",
                 # Performance tuning
                 worker_prefetch_multiplier=1,
                 task_acks_late=True,

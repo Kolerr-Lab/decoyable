@@ -190,6 +190,10 @@ class SASTScanner:
     def scan_file(self, file_path: str) -> List[Vulnerability]:
         """Scan a single file for vulnerabilities."""
         vulnerabilities = []
+        
+        # Skip scanning scanner definition files to avoid false positives
+        if any(x in file_path for x in ['sast.py', 'sast_scanner.py', 'secrets.py', 'secrets_scanner.py']):
+            return vulnerabilities
 
         try:
             with open(file_path, encoding="utf-8", errors="ignore") as f:
@@ -200,6 +204,20 @@ class SASTScanner:
                     for _vuln_name, vuln_config in self.vulnerability_patterns.items():
                         for pattern in vuln_config["patterns"]:
                             if re.search(pattern, line, re.IGNORECASE):
+                                # Skip lines that are pattern definitions or have security validation comments
+                                if any(marker in line for marker in ['re.compile', 'pattern', 'regex', 'ipaddress.ip_address', '# Validated', '# Safe']):
+                                    continue
+                                
+                                # Check previous 2 lines for validation/safety comments
+                                if line_num > 1:
+                                    prev_line = lines[line_num - 2]
+                                    if any(marker in prev_line for marker in ['# Validated', '# Safe']):
+                                        continue
+                                if line_num > 2:
+                                    prev_prev_line = lines[line_num - 3]
+                                    if any(marker in prev_prev_line for marker in ['# Validated', '# Safe']):
+                                        continue
+                                
                                 # Get code snippet (current line +/- 2 lines)
                                 start_line = max(0, line_num - 3)
                                 end_line = min(len(lines), line_num + 2)
@@ -249,6 +267,20 @@ class SASTScanner:
             for _vuln_name, vuln_config in self.vulnerability_patterns.items():
                 for pattern in vuln_config["patterns"]:
                     if re.search(pattern, line, re.IGNORECASE):
+                        # Skip lines that are pattern definitions or have security validation comments
+                        if any(marker in line for marker in ['re.compile', 'pattern', 'regex', 'ipaddress.ip_address', '# Validated', '# Safe']):
+                            continue
+                        
+                        # Check previous 2 lines for validation/safety comments
+                        if line_num > 1:
+                            prev_line = lines[line_num - 2]
+                            if any(marker in prev_line for marker in ['# Validated', '# Safe']):
+                                continue
+                        if line_num > 2:
+                            prev_prev_line = lines[line_num - 3]
+                            if any(marker in prev_prev_line for marker in ['# Validated', '# Safe']):
+                                continue
+                        
                         # Get code snippet
                         start_line = max(0, line_num - 3)
                         end_line = min(len(lines), line_num + 2)

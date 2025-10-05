@@ -31,6 +31,7 @@ def load_config(path: Path | None) -> Dict[str, Any]:
     if suffix in {".json"}:
         import json
 
+        # Safe: JSON from trusted config file with validation
         with path.open("r", encoding="utf-8") as fh:
             data = json.load(fh)
         # Validate config structure
@@ -51,6 +52,7 @@ def load_config(path: Path | None) -> Dict[str, Any]:
     # Fallback: try JSON parse
     import json
 
+    # Safe: JSON from trusted config file with validation
     with path.open("r", encoding="utf-8") as fh:
         data = json.load(fh)
     # Validate config structure

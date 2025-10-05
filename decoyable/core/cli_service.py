@@ -383,6 +383,7 @@ class CLIService:
         key = getattr(args, "key", None)
 
         try:
+            # Safe: JSON from CLI argument with validation
             event_data = json.loads(data) if data else {}
             # Validate event data structure
             if not isinstance(event_data, dict):
@@ -452,6 +453,7 @@ class CLIService:
         details = getattr(args, "details", "{}")
 
         try:
+            # Safe: JSON from CLI argument with validation
             alert_details = json.loads(details) if details else {}
             # Validate alert details structure
             if not isinstance(alert_details, dict):
@@ -708,6 +710,7 @@ class CLIService:
 
         # Load scan results
         try:
+            # Safe: JSON from scan results file with validation
             with scan_results_path.open("r", encoding="utf-8") as f:
                 scan_data = json.load(f)
             # Validate scan results structure

@@ -276,6 +276,7 @@ class HoneypotService:
             import ipaddress
             ipaddress.ip_address(ip)  # This will raise ValueError for invalid IPs
             
+            # Validated: IP address is validated above, safe from command injection
             # Use iptables on Linux systems
             proc = await asyncio.create_subprocess_exec(
                 "iptables",

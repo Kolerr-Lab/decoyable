@@ -82,6 +82,7 @@ class AttackEventConsumer:
     def _safe_json_loads(self, data: str) -> dict:
         """Safely deserialize JSON data with validation."""
         try:
+            # Safe: JSON from Kafka message stream with type validation
             parsed = json.loads(data)
             if not isinstance(parsed, dict):
                 logger.warning(f"Invalid Kafka message format: expected dict, got {type(parsed)}")

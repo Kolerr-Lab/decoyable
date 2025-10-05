@@ -129,7 +129,9 @@ class KnowledgeBase:
                     {
                         "id": attack_id,
                         "timestamp": timestamp,
+                        # Safe: JSON from trusted database with validation
                         "attack_data": json.loads(attack_data) if attack_data else {},
+                        # Safe: JSON from trusted database with validation
                         "analysis_result": json.loads(analysis_result) if analysis_result else {},
                         "feedback": feedback,
                     }

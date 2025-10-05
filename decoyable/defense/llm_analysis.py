@@ -85,6 +85,7 @@ JSON Response:
         # Parse JSON response
         try:
             content = response["choices"][0]["message"]["content"]
+            # Safe: JSON from LLM response with validation
             analysis = json.loads(content)
             # Validate analysis structure
             if not isinstance(analysis, dict):

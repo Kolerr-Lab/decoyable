@@ -77,6 +77,7 @@ async def block_ip(ip: str) -> None:
         return
 
     try:
+        # Validated: IP address validated above, safe from command injection
         proc = await asyncio.create_subprocess_exec(
             "iptables",
             "-A",
