@@ -64,7 +64,7 @@ def load_config(path: Path | None) -> Dict[str, Any]:
 def build_arg_parser() -> argparse.ArgumentParser:
     """Build the CLI argument parser."""
     p = argparse.ArgumentParser(prog="decoyable", description="DECOYABLE CLI")
-    p.add_argument("--version", action="version", version="decoyable 1.0.3")
+    p.add_argument("--version", action="version", version="decoyable 1.0.4")
     p.add_argument(
         "-v",
         "--verbose",
@@ -286,7 +286,7 @@ def main(argv: list[str] | None = None) -> int:
         # Set to INFO level
         pass  # Already configured by logging service
 
-    logger.debug("Starting decoyable version 1.0.3")
+    logger.debug("Starting decoyable version 1.0.4")
 
     # Load additional config if provided
     try:

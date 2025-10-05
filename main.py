@@ -19,7 +19,7 @@ from decoyable.scanners import deps, sast, secrets
 
 # Package / app metadata
 APP_NAME = "decoyable"
-VERSION = "1.0.3"
+VERSION = "1.0.4"
 
 
 def setup_logging(level: str = "INFO", logfile: Path | None = None) -> None:
