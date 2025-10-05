@@ -16,7 +16,7 @@
 ⚡ **Sub-30ms scanning with enterprise-grade performance**  
 📦 **Available on PyPI: `pip install decoyable`**
 
-## 🎉 **Version 1.0.5 - AI-Powered Revolution!**
+## 🎉 **Version 1.1.0 - Auto-Fix & Multi-Language Support!**
 
 🤖 **8 AI Systems Built** - 3,050+ lines of revolutionary AI code  
 ⚡ **0.43s Analysis** - Full codebase security analysis in under half a second  
@@ -49,7 +49,7 @@ decoyable scan all
 **Traditional Security Tools:** Passive scanners that only report problems  
 **DECOYABLE:** Active defense that prevents attacks and learns from them
 
-## 🤖 AI-Powered Analysis (WOW MODE!) ⚡ NEW in v1.0.5
+## 🤖 AI-Powered Analysis (WOW MODE!) ⚡ NEW in v1.1.0
 
 The most powerful feature - **8 AI systems** working together in **0.43 seconds**:
 
@@ -150,6 +150,7 @@ python main.py ai-analyze . --dashboard --deploy-defense
 - **🔑 Secret Detection**: AWS keys, GitHub tokens, API keys, passwords
 - **📦 Dependency Analysis**: Vulnerable/missing Python packages
 - **💻 SAST Scanning**: SQL injection, XSS, command injection, path traversal
+- **🛠️ Auto-Fix**: Automatically remediate 4 vulnerability types (secrets, crypto, random, injection)
 - **⚡ Performance**: Sub-30ms response times with Redis caching
 - **🤖 AI Enhancement**: ML-based threat prediction and pattern learning
 
@@ -351,6 +352,29 @@ python main.py ai-analyze /path/to/code --dashboard
 - 📊 Live security dashboard with risk scoring
 - 🛡️ Defense recommendations
 - 💡 Actionable remediation steps
+
+#### **Automated Fix Commands** 🛠️ ⚡ NEW
+
+```bash
+# Apply automated security fixes
+decoyable fix --scan-results results.json --confirm
+
+# Auto-approve all fixes (fast mode)
+decoyable fix --scan-results results.json --auto-approve
+
+# Complete workflow: Scan → Fix → Verify
+decoyable scan all . --format json > results.json
+decoyable fix --scan-results results.json --auto-approve
+decoyable scan all . --format json > after_fix.json
+```
+
+**What gets fixed automatically:**
+- 🔐 Hardcoded secrets → Environment variables
+- 🔒 Weak crypto (MD5 → SHA-256)
+- 🎲 Insecure random → Secrets module
+- 💉 Command injection → IP validation
+
+**See [AUTOFIX_GUIDE.md](AUTOFIX_GUIDE.md) for complete documentation.**
 
 #### **Development Commands (From Source)**
 
@@ -876,7 +900,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 **DECOYABLE**: From passive scanning to active defense. Transform your security posture with AI-powered cyber defense. 🛡️🤖
 
-## 📋 Quick Command Reference (v1.0.5)
+## 📋 Quick Command Reference (v1.1.0)
 
 ### 🚀 Most Powerful Commands
 
@@ -984,8 +1008,8 @@ python -m build
 twine upload dist/*
 
 # Create release tag
-git tag -a v1.0.5 -m "Version 1.0.5"
-git push origin v1.0.5
+git tag -a v1.1.0 -m "Version 1.1.0"
+git push origin v1.1.0
 ```
 
 **💡 Pro Tip:** For detailed command reference, see [command.txt](command.txt) - 350+ commands documented!

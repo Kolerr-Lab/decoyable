@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-10-05
+
+### 🛠️ Major Features
+- **Auto-Fix Feature** - Automated vulnerability remediation system
+  - Automatically fixes 4 vulnerability types: hardcoded secrets, weak crypto, insecure random, command injection
+  - Pattern-based remediation with intelligent code replacement
+  - Two modes: confirm mode (review changes) and auto-approve mode (instant fix)
+  - Preserves code functionality while enhancing security
+  - Full technical documentation in AUTOFIX_GUIDE.md (475 lines)
+
+### 📚 Documentation
+- **AUTOFIX_GUIDE.md** (475 lines) - Complete technical guide for auto-fix feature
+  - Detailed workflow examples for each vulnerability type
+  - Before/after code comparisons
+  - Implementation details and best practices
+  - Limitations and safety considerations
+- **AUTOFIX_VISUAL_GUIDE.md** (334 lines) - Quick-start visual guide
+  - Visual before/after examples
+  - Command reference tables
+  - Performance metrics and success stories
+- **MULTI_LANGUAGE_SUPPORT.md** - Comprehensive multi-language support documentation
+  - Python: Full support (scanning + auto-fix)
+  - JavaScript, Java, Ruby, Go, C/C++, PHP, TypeScript, Rust: Partial support (secrets + patterns)
+  - Feature comparison matrix by language
+  - Roadmap for full multi-language support (v1.1-2.0)
+- **test_autofix_demo.py** - Demo file with intentional security issues for testing
+- **README.md** - Added auto-fix section to features and commands
+
+### 🎯 Fix Types Supported
+1. **Hardcoded Secrets** → Environment variables with `.env` integration
+2. **Weak Cryptography** → MD5/SHA1 upgraded to SHA256
+3. **Insecure Random** → `random.random()` replaced with `secrets.token_hex()`
+4. **Command Injection** → Input validation with IP/domain sanitization
+
+### 🌐 Multi-Language Support
+- **Python** (Full): All features including auto-fix
+- **9 Languages** (Partial): JavaScript, TypeScript, Java, C, C++, PHP, Ruby, Go, Rust
+  - Secret detection and pattern-based scanning
+  - VS Code extension supports all 10 languages
+
+### 📈 Improvements
+- Enhanced README with comprehensive auto-fix documentation
+- Cross-referenced documentation for easy navigation
+- Updated command reference with 350+ commands
+
 ## [1.0.5] - 2025-10-05
 
 ### 📚 Documentation
