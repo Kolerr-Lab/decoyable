@@ -16,7 +16,7 @@
 ⚡ **Sub-30ms scanning with enterprise-grade performance**  
 📦 **Available on PyPI: `pip install decoyable`**
 
-## 🎉 **Version 1.0.4 - AI-Powered Revolution!**
+## 🎉 **Version 1.0.5 - AI-Powered Revolution!**
 
 ✅ **Zero Real Security Vulnerabilities** - Comprehensive security audit completed  
 🛡️ **Enterprise-Grade Security** - IP validation, safe JSON deserialization, SHA-256 crypto  
