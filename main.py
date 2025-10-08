@@ -9,7 +9,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
 from decoyable.scanners import deps, sast, secrets
+
+# Load environment variables from .env file
+load_dotenv()
 
 # /g:/TECH/DECOYABLE/main.py
 
@@ -19,7 +23,7 @@ from decoyable.scanners import deps, sast, secrets
 
 # Package / app metadata
 APP_NAME = "decoyable"
-VERSION = "1.1.1"
+VERSION = "1.2.0"
 
 
 def setup_logging(level: str = "INFO", logfile: Path | None = None) -> None:
@@ -449,6 +453,29 @@ def run_ai_analyze(config: dict[str, Any], args: argparse.Namespace) -> int:
         return 1
 
 
+def run_ai_status() -> int:
+    """
+    Show AI provider status and available models.
+    Returns an exit code (0 for success).
+    """
+    print("\n" + "="*60)
+    print("🤖 DECOYABLE AI STATUS CHECK".center(60))
+    print("="*60 + "\n")
+    
+    try:
+        from decoyable.llm.model_router import get_router
+        
+        router = get_router()
+        router.print_status()
+        
+        return 0
+        
+    except Exception as exc:
+        print(f"❌ Failed to check AI status: {exc}")
+        print("\nℹ️  AI features are optional. DECOYABLE works without them.")
+        return 1
+
+
 def run_fix_command(config: dict[str, Any], args: argparse.Namespace) -> int:
     """
     Apply automated fixes for security issues.
@@ -741,6 +768,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     ai_analyze.add_argument("--deploy-defense", action="store_true", help="Deploy active defense measures")
     ai_analyze.add_argument("--dashboard", action="store_true", help="Show live security dashboard")
 
+    # ai-status command (NEW in v1.2.0!)
+    ai_status = sub.add_parser("ai-status", help="🤖 Show AI provider status and configuration")
+
     return p
 
 
@@ -779,6 +809,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_fix_command(config, args)
         elif cmd == "ai-analyze":
             return run_ai_analyze(config, args)
+        elif cmd == "ai-status":
+            return run_ai_status()
         elif cmd == "test":
             log.info("Running self-tests (fast=%s)", getattr(args, "fast", False))
             # Simple internal checks

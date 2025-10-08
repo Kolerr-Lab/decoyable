@@ -4,6 +4,8 @@ Predictive Threat Intelligence System
 Uses machine learning to predict attack patterns and vulnerabilities
 before they are exploited. Analyzes code patterns, historical data,
 and threat intelligence to provide proactive security recommendations.
+
+Now powered by multi-tier AI: Ollama → OpenAI → Claude → Phi-3 → Pattern-based
 """
 
 import asyncio
@@ -15,6 +17,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
+
+from decoyable.llm.model_router import get_router
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +73,15 @@ class PredictiveThreatAnalyzer:
         self.attack_signatures = {}
         self.prediction_cache = {}
         self._initialized = False
+        
+        # Initialize AI router for intelligent predictions
+        self.ai_router = get_router()
+        self.ai_enabled = len(self.ai_router.providers) > 1  # More than just pattern-based
 
-        logger.info("Predictive Threat Analyzer initialized")
+        if self.ai_enabled:
+            logger.info(f"✓ Predictive Threat Analyzer initialized with AI ({self.ai_router.active_provider.value})")
+        else:
+            logger.info("Predictive Threat Analyzer initialized (pattern-based mode)")
 
     def _load_threat_patterns(self) -> Dict[str, Any]:
         """Load known threat patterns and signatures."""
@@ -203,7 +214,10 @@ class PredictiveThreatAnalyzer:
         threat_config: Dict[str, Any],
         features: Dict[str, float],
     ) -> Optional[ThreatPrediction]:
-        """Predict specific threat for a code pattern."""
+        """
+        Predict specific threat for a code pattern.
+        Uses AI if available, otherwise falls back to heuristics.
+        """
         code = pattern.code_snippet.lower()
 
         # Check if pattern contains threat-related keywords
@@ -212,6 +226,75 @@ class PredictiveThreatAnalyzer:
         if keyword_matches == 0:
             return None
 
+        # If AI is available, use it for enhanced predictions
+        if self.ai_enabled:
+            try:
+                ai_result = await self.ai_router.analyze(
+                    code=pattern.code_snippet,
+                    context={
+                        "file_path": pattern.file_path,
+                        "threat_type": threat_type,
+                        "features": features
+                    },
+                    task="threat_prediction",
+                    prefer_local=True  # Prefer free local models
+                )
+                
+                if ai_result and "predictions" in ai_result:
+                    # Use AI-enhanced prediction
+                    return self._parse_ai_prediction(
+                        ai_result, pattern, threat_type, threat_config
+                    )
+            except Exception as e:
+                logger.warning(f"AI prediction failed, falling back to heuristics: {e}")
+
+        # Fallback to heuristic-based prediction
+        return await self._predict_threat_heuristic(
+            pattern, threat_type, threat_config, features, code, keyword_matches
+        )
+    
+    def _parse_ai_prediction(
+        self,
+        ai_result: Dict[str, Any],
+        pattern: CodePattern,
+        threat_type: str,
+        threat_config: Dict[str, Any]
+    ) -> Optional[ThreatPrediction]:
+        """Parse AI prediction results into ThreatPrediction object."""
+        predictions = ai_result.get("predictions", [])
+        
+        # Find prediction matching our threat type
+        for pred in predictions:
+            if pred.get("threat_type", "").lower() == threat_type.lower():
+                probability = pred.get("probability", 0.5)
+                confidence = ai_result.get("confidence", 85) / 100.0
+                
+                return ThreatPrediction(
+                    threat_type=threat_type,
+                    probability=probability,
+                    confidence=confidence,
+                    risk_score=probability * threat_config["severity_multiplier"] * 100,
+                    affected_components=[pattern.file_path],
+                    attack_vectors=pred.get("attack_vectors", []),
+                    recommended_defenses=pred.get("defenses", []),
+                    time_to_exploitation=timedelta(days=pred.get("tte_days", 7)),
+                    severity=pred.get("severity", "MEDIUM"),
+                    evidence=[pattern.code_snippet],
+                    timestamp=datetime.now()
+                )
+        
+        return None
+    
+    async def _predict_threat_heuristic(
+        self,
+        pattern: CodePattern,
+        threat_type: str,
+        threat_config: Dict[str, Any],
+        features: Dict[str, float],
+        code: str,
+        keyword_matches: int
+    ) -> Optional[ThreatPrediction]:
+        """Heuristic-based threat prediction (fallback)."""
         # Calculate base probability
         base_prob = threat_config["base_probability"]
         keyword_score = min(1.0, keyword_matches / len(threat_config["keywords"]))
