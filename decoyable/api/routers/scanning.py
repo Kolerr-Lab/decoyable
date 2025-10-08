@@ -9,7 +9,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from decoyable.core.logging import get_logger
-from decoyable.core.registry import ServiceRegistry
+from decoyable.core.registry import get_service_registry
 from decoyable.scanners.service import ScannerService
 
 router = APIRouter()
@@ -39,9 +39,10 @@ class ScanResponse(BaseModel):
     scan_duration: Optional[float] = None
 
 
-def get_scanner_service(registry: ServiceRegistry = Depends(lambda: ServiceRegistry())) -> ScannerService:
+def get_scanner_service() -> ScannerService:
     """Dependency injection for scanner service."""
     try:
+        registry = get_service_registry()
         config = registry.get_by_name("config")
         logging_service = registry.get_by_name("logging")
         return ScannerService(config, logging_service)

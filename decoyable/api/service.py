@@ -11,7 +11,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from decoyable.core.config import Settings
 from decoyable.core.logging import LoggingService, get_logger
-from decoyable.core.registry import ServiceRegistry
+from decoyable.core.registry import ServiceRegistry, get_service_registry
 
 
 class APIService:
@@ -37,8 +37,12 @@ class APIService:
 
     async def _startup(self) -> None:
         """Initialize services on startup."""
-        # Register API service in registry
+        # Register API service in both registries
         self.registry.register_instance("api", self)
+        global_registry = get_service_registry()
+        global_registry.register_instance("config", self.config)
+        global_registry.register_instance("logging", self.logging_service)
+        global_registry.register_instance("api", self)
 
         # Initialize database connections, caches, etc.
         self.logger.info("API service startup complete")
@@ -95,12 +99,14 @@ class APIService:
         from .routers.health import router as health_router
         from .routers.metrics import router as metrics_router
         from .routers.scanning import router as scanning_router
+        from decoyable.defense.analysis import router as analysis_router
 
         # Register routers with prefixes
         app.include_router(health_router, prefix="/api/v1", tags=["health"])
         app.include_router(scanning_router, prefix="/api/v1", tags=["scanning"])
         app.include_router(metrics_router, prefix="/api/v1", tags=["metrics"])
         app.include_router(attacks_router, prefix="/api/v1", tags=["attacks"])
+        app.include_router(analysis_router, tags=["analysis"])
         app.include_router(honeypot_router, tags=["honeypot"])
 
     def _get_api_description(self) -> str:

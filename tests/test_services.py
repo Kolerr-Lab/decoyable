@@ -513,6 +513,7 @@ class TestPerformanceValidation:
     async def test_attack_processing_performance(self, registry):
         """Test attack processing performance meets latency requirements."""
         import time
+        from unittest.mock import patch
 
         from decoyable.core.honeypot_service import HoneypotService
 
@@ -527,14 +528,16 @@ class TestPerformanceValidation:
 
         attack_data = {"ip_address": "192.168.1.100", "method": "GET", "path": "/admin", "user_agent": "Test Agent"}
 
-        # Test processing performance
-        start_time = time.time()
-        result = await service.process_attack(attack_data)
-        process_time = time.time() - start_time
+        # Mock the AI analysis to avoid slow API calls
+        with patch("decoyable.core.honeypot_service.analyze_attack_async", return_value={"threat_level": "high", "attack_type": "reconnaissance"}):
+            # Test processing performance
+            start_time = time.time()
+            result = await service.process_attack(attack_data)
+            process_time = time.time() - start_time
 
-        # Should process attack in under 100ms (relaxed for test environment)
-        assert process_time < 0.1, f"Attack processing took {process_time:.3f}s"
-        assert result["processed"] is True
+            # Should process attack in under 100ms (relaxed for test environment)
+            assert process_time < 0.1, f"Attack processing took {process_time:.3f}s"
+            assert result["processed"] is True
 
 
 class TestErrorHandling:
