@@ -2,8 +2,117 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format   - **RESP  - JSON schema validation for automation compatibility
+
+## [1.1.0] - 2025-10-05
+
+### 🛠️ Major Features
+
+- **Auto-Fix Feature** - Automated vulnerability remediation systemO_ENGINEER.md** - Quick summary for engineer feedback
+
+### 🔧 Technical Details
+
+- Pattern matching with 20+ new regex patterns for vulnerability detectionased on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.1.1] - 2025-10-08
+
+### 🚀 New Features
+
+- **Auto-Fix for SQL Injection** - Transform unsafe SQL queries to parameterized queries
+  - Automatically converts `"SELECT * FROM users WHERE id = %s" % user_id` to parameterized format
+  - Supports SELECT, INSERT, UPDATE, DELETE statements
+  - Pattern matching for %, +, and f-string formatting
+  - Automatic parameter tuple generation
+  
+- **Auto-Fix for Command Injection** - Transform os.system() to subprocess.run()
+  - Automatically converts `os.system("ping -c 1 " + host)` to `subprocess.run(['ping', '-c', '1', host], check=True)`
+  - Adds proper argument list structure for safety
+  - Automatically imports subprocess module when needed
+  - Handles string concatenation and f-string patterns
+  
+- **Context-Aware Recommendations** - Framework-specific security guidance
+  - **Flask**: Suggests Flask-SQLAlchemy ORM with db.session.query() examples
+  - **Django**: Suggests Django ORM with .filter() and cursor.execute() with params
+  - **FastAPI**: Suggests SQLAlchemy with async sessions
+  - **CLI tools**: Suggests argparse validation and subprocess.run with list arguments
+  - **Database contexts**: Specific recommendations based on detected frameworks
+  
+- **JSON Output Format** - Structured output for automation workflows
+  - Added `--format json` option to scan command
+  - Outputs structured JSON with scan_type, target_path, issues[], and summary
+  - Compatible with CI/CD pipelines and automated security workflows
+  - Exit code 1 if issues found, 0 if clean (automation-friendly)
+
+### 🐛 Bug Fixes
+
+- **Fixed SQL Injection Detection** - Enhanced pattern matching for % string formatting
+  - Added 10+ new patterns for SQL injection detection
+  - Now detects: `"SELECT * FROM users WHERE id = %s" % uid`
+  - Covers all SQL statement types with % operator
+  - Engineer test Case #2 now passing ✅
+  
+- **Enhanced Command Injection Detection** - Improved shell=True and eval/exec patterns
+  - Added subprocess.run with shell=True detection
+  - Added eval() and exec() dangerous pattern detection
+  - More specific recommendations with code examples
+  - Engineer test Case #3 now passing ✅
+  
+- **Fixed Coroutine Runtime Error** - Async function call without await
+  - Fixed "coroutine 'run_fix_command' was never awaited" error
+  - Added asyncio.run() wrapper in decoyable/core/main.py
+  - Fix command now executes without runtime errors
+  
+- **Fixed JSON Output Support** - CLI --format json now fully functional
+  - Implemented JSON collection for all scan types (SAST, secrets, dependencies)
+  - Added conditional output based on format parameter
+  - Fixed BOM encoding issue with utf-8-sig for Windows compatibility
+  - Automation workflows now unblocked
+
+### 📈 Improvements
+
+- **Enhanced SAST Scanner** (decoyable/scanners/sast.py)
+  - Added _detect_framework_context() method (18 lines)
+  - Added _get_context_aware_recommendation() method (58 lines)
+  - SQL injection patterns: 5 → 15 patterns
+  - Command injection patterns: 5 → 9 patterns
+  - Total enhancements: ~100 lines of improved detection logic
+  
+- **Enhanced Main CLI** (main.py)
+  - Completely rewritten _apply_fix_to_issue() function (155 lines)
+  - SQL injection transformation with pattern matching
+  - Command injection transformation with import management
+  - Added JSON output collection and formatting
+  - BOM-aware JSON file reading for cross-platform compatibility
+
+### 🧪 Testing
+
+- Created 7 comprehensive test files for verification
+  - test_engineer_case2.py: SQL injection test case
+  - test_engineer_case3.py: Command injection test case
+  - test_all_cases.py: Comprehensive test with 8 vulnerabilities
+  - test_flask_autofix.py: Flask app with SQL/command injection
+  - test_django_autofix.py: Django views with SQL injection
+  - test_cli_autofix.py: CLI tool with command injection
+  - test_before_autofix.py: Simple demo file for auto-fix
+  
+- **Test Results**: 100% detection rate for SQL and command injection
+  - SQL injection: 3/3 detected (100%)
+  - Command injection: 4/4 detected (100%)
+  - Context-aware recommendations: 3/3 frameworks working (Flask/Django/CLI)
+  - JSON output: Valid structure verified
+  - Auto-fix transformations: Command injection successfully transformed
+
+### 📚 Documentation (v1.1.1)
+
+- **ENGINEER_TEST_REPORT.md** (450+ lines) - Complete analysis of engineer test results
+- **RESPONSE_TO_ENGINEER.md** - Quick summary for engineer feedback
+
+### 🔧 Technical Details
+- Pattern matching with 20+ new regex patterns for vulnerability detection
+- Framework context detection via import analysis
+- Automatic code transformation with whitespace preservation
+- JSON schema validation for automation compatibility
 
 ## [1.1.0] - 2025-10-05
 

@@ -301,7 +301,9 @@ def main(argv: list[str] | None = None) -> int:
         if cmd in ("run", "scan"):
             return cli_service.run_main_task(config_dict, args)
         elif cmd == "fix":
-            return cli_service.run_fix_command(args)
+            # run_fix_command is async, so we need to use asyncio.run()
+            import asyncio
+            return asyncio.run(cli_service.run_fix_command(args))
         elif cmd == "test":
             return cli_service.run_test_command(args)
         elif cmd == "task":

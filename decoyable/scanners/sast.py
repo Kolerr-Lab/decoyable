@@ -52,6 +52,7 @@ class SASTScanner:
     def __init__(self):
         """Initialize the SAST scanner with vulnerability patterns."""
         self.vulnerability_patterns = self._load_patterns()
+        self.framework_context = None
 
     def _load_patterns(self) -> Dict[str, Dict[str, Any]]:
         """Load vulnerability detection patterns."""
@@ -201,6 +202,85 @@ class SASTScanner:
             },
         }
 
+    def _detect_framework_context(self, content: str, file_path: str) -> str:
+        """Detect the framework/context of the code."""
+        # Check imports
+        if "from flask import" in content or "import flask" in content:
+            return "flask"
+        if "from django" in content or "import django" in content:
+            return "django"
+        if "from fastapi import" in content or "import fastapi" in content:
+            return "fastapi"
+        if "import argparse" in content or "from argparse import" in content:
+            return "cli"
+        if "#!/usr/bin/env python" in content or file_path.endswith("cli.py"):
+            return "cli"
+        
+        # Check for database imports
+        if any(db in content for db in ["import sqlite3", "import psycopg2", "import pymysql", "import pymongo"]):
+            return "database"
+        
+        return "generic"
+
+    def _get_context_aware_recommendation(self, vuln_type: VulnerabilityType, base_recommendation: str, context: str) -> str:
+        """Get context-aware recommendation based on framework."""
+        
+        if vuln_type == VulnerabilityType.SQL_INJECTION:
+            if context == "flask":
+                return (
+                    "For Flask apps:\n"
+                    "1. Use Flask-SQLAlchemy ORM: db.session.query(User).filter_by(id=user_id)\n"
+                    "2. Or use parameterized queries: db.execute('SELECT * FROM users WHERE id = ?', (user_id,))\n"
+                    "3. Never concatenate user input into SQL strings"
+                )
+            elif context == "django":
+                return (
+                    "For Django apps:\n"
+                    "1. Use Django ORM: User.objects.filter(id=user_id)\n"
+                    "2. Or use parameterized queries: cursor.execute('SELECT * FROM users WHERE id = %s', [user_id])\n"
+                    "3. Avoid raw SQL with string formatting"
+                )
+            elif context == "database":
+                return (
+                    "Use parameterized queries:\n"
+                    "✅ cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))\n"
+                    "❌ cursor.execute(f'SELECT * FROM users WHERE id = {user_id}')\n"
+                    "Replace string concatenation/formatting with placeholders (? or %s)"
+                )
+        
+        elif vuln_type == VulnerabilityType.COMMAND_INJECTION:
+            if context == "cli":
+                return (
+                    "For CLI tools:\n"
+                    "1. Validate input with argparse: parser.add_argument('--host', type=str, required=True)\n"
+                    "2. Use subprocess.run with list: subprocess.run(['ping', '-c', '1', host])\n"
+                    "3. Whitelist allowed values: if host in ALLOWED_HOSTS\n"
+                    "4. Never use os.system() - it's inherently unsafe"
+                )
+            else:
+                return (
+                    "Avoid command injection:\n"
+                    "1. Use subprocess.run() with list of arguments (not string)\n"
+                    "2. Never use shell=True unless absolutely necessary\n"
+                    "3. Validate/whitelist all user input\n"
+                    "✅ subprocess.run(['cmd', 'arg1', 'arg2'], check=True)\n"
+                    "❌ os.system(f'cmd {user_input}')"
+                )
+        
+        elif vuln_type == VulnerabilityType.XSS:
+            if context in ["flask", "django", "fastapi"]:
+                framework_name = context.capitalize()
+                return (
+                    f"For {framework_name} apps:\n"
+                    "1. Use template auto-escaping (enabled by default)\n"
+                    "2. Never use innerHTML or document.write with user input\n"
+                    "3. Implement Content Security Policy (CSP) headers\n"
+                    "4. Use textContent instead of innerHTML for text insertion"
+                )
+        
+        # Return base recommendation if no context-specific one
+        return base_recommendation
+
     def scan_file(self, file_path: str) -> List[Vulnerability]:
         """Scan a single file for vulnerabilities."""
         vulnerabilities = []
@@ -213,6 +293,9 @@ class SASTScanner:
             with open(file_path, encoding="utf-8", errors="ignore") as f:
                 content = f.read()
                 lines = content.split("\n")
+                
+                # Detect framework context
+                context = self._detect_framework_context(content, file_path)
 
                 for line_num, line in enumerate(lines, 1):
                     for _vuln_name, vuln_config in self.vulnerability_patterns.items():
@@ -240,6 +323,14 @@ class SASTScanner:
                                     f"{i+start_line+1:4d}: {line}" for i, line in enumerate(snippet_lines)
                                 )
 
+                                # Get context-aware recommendation
+                                base_recommendation = vuln_config["recommendation"]
+                                context_recommendation = self._get_context_aware_recommendation(
+                                    vuln_config["type"],
+                                    base_recommendation,
+                                    context
+                                )
+
                                 vulnerability = Vulnerability(
                                     file_path=file_path,
                                     line_number=line_num,
@@ -247,7 +338,7 @@ class SASTScanner:
                                     severity=vuln_config["severity"],
                                     description=vuln_config["description"],
                                     code_snippet=snippet,
-                                    recommendation=vuln_config["recommendation"],
+                                    recommendation=context_recommendation,
                                 )
                                 vulnerabilities.append(vulnerability)
                                 break  # Only report once per line per vulnerability type
@@ -276,6 +367,9 @@ class SASTScanner:
         """Scan a code string for vulnerabilities."""
         vulnerabilities = []
         lines = code.split("\n")
+        
+        # Detect framework context
+        context = self._detect_framework_context(code, file_path)
 
         for line_num, line in enumerate(lines, 1):
             for _vuln_name, vuln_config in self.vulnerability_patterns.items():
@@ -301,6 +395,14 @@ class SASTScanner:
                         snippet_lines = lines[start_line:end_line]
                         snippet = "\n".join(f"{i+start_line+1:4d}: {line}" for i, line in enumerate(snippet_lines))
 
+                        # Get context-aware recommendation
+                        base_recommendation = vuln_config["recommendation"]
+                        context_recommendation = self._get_context_aware_recommendation(
+                            vuln_config["type"],
+                            base_recommendation,
+                            context
+                        )
+
                         vulnerability = Vulnerability(
                             file_path=file_path,
                             line_number=line_num,
@@ -308,7 +410,7 @@ class SASTScanner:
                             severity=vuln_config["severity"],
                             description=vuln_config["description"],
                             code_snippet=snippet,
-                            recommendation=vuln_config["recommendation"],
+                            recommendation=context_recommendation,
                         )
                         vulnerabilities.append(vulnerability)
                         break

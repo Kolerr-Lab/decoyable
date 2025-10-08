@@ -1,0 +1,28 @@
+{
+  "scan_type": "sast",
+  "target_path": "test_before_autofix.py",
+  "issues": [
+    {
+      "file": "test_before_autofix.py",
+      "line": 13,
+      "type": "COMMAND_INJECTION",
+      "severity": "critical",
+      "title": "COMMAND_INJECTION vulnerability",
+      "description": "Potential command injection vulnerability",
+      "recommendation": "Use subprocess.run with list of arguments"
+    },
+    {
+      "file": "test_before_autofix.py",
+      "line": 8,
+      "type": "SQL_INJECTION",
+      "severity": "high",
+      "title": "SQL_INJECTION vulnerability",
+      "description": "Potential SQL injection vulnerability",
+      "recommendation": "Use parameterized queries"
+    }
+  ],
+  "summary": {
+    "total_issues": 2,
+    "has_issues": true
+  }
+}

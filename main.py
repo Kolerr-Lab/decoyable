@@ -19,7 +19,7 @@ from decoyable.scanners import deps, sast, secrets
 
 # Package / app metadata
 APP_NAME = "decoyable"
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 
 
 def setup_logging(level: str = "INFO", logfile: Path | None = None) -> None:
@@ -132,18 +132,36 @@ def run_scan(args: argparse.Namespace) -> int:
 
     log.info(f"Starting {scan_type} scan on: {target_path}")
 
+    # Collect all issues for JSON output
+    all_issues = []
+    has_issues = False
+
     try:
         if scan_type in ("secrets", "all"):
             log.info("Scanning for exposed secrets...")
             findings = secrets.scan_paths([target_path])
 
             if findings:
+                has_issues = True
                 log.warning(f"Found {len(findings)} potential secrets:")
                 for finding in findings:
-                    print(f"{finding.filename}:{finding.lineno} [{finding.secret_type}] {finding.masked()}")
-                    if output_format == "verbose":
-                        print(f"  Context: {finding.context}")
-                if scan_type == "secrets":
+                    issue = {
+                        "file": finding.filename,
+                        "line": finding.lineno,
+                        "type": "SECRET",
+                        "severity": "high",
+                        "title": f"Hardcoded {finding.secret_type}",
+                        "description": f"Found potential {finding.secret_type} secret",
+                        "value": finding.masked()
+                    }
+                    all_issues.append(issue)
+                    
+                    if output_format != "json":
+                        print(f"{finding.filename}:{finding.lineno} [{finding.secret_type}] {finding.masked()}")
+                        if output_format == "verbose":
+                            print(f"  Context: {finding.context}")
+                
+                if scan_type == "secrets" and output_format != "json":
                     return 1  # Exit with error if secrets found
             else:
                 log.info("No secrets found.")
@@ -153,14 +171,28 @@ def run_scan(args: argparse.Namespace) -> int:
             missing_imports, import_mapping = deps.missing_dependencies(target_path)
 
             if missing_imports:
+                has_issues = True
                 log.warning(f"Found {len(missing_imports)} missing dependencies:")
                 for imp in sorted(missing_imports):
                     providers = import_mapping.get(imp, [])
-                    if providers:
-                        print(f"{imp} -> {', '.join(providers)}")
-                    else:
-                        print(f"{imp} -> (no known providers)")
-                if scan_type == "deps":
+                    issue = {
+                        "file": target_path,
+                        "line": 0,
+                        "type": "MISSING_DEPENDENCY",
+                        "severity": "medium",
+                        "title": f"Missing dependency: {imp}",
+                        "description": f"Import '{imp}' not found",
+                        "providers": providers if providers else []
+                    }
+                    all_issues.append(issue)
+                    
+                    if output_format != "json":
+                        if providers:
+                            print(f"{imp} -> {', '.join(providers)}")
+                        else:
+                            print(f"{imp} -> (no known providers)")
+                
+                if scan_type == "deps" and output_format != "json":
                     return 1  # Exit with error if missing deps
             else:
                 log.info("All dependencies appear to be satisfied.")
@@ -173,6 +205,7 @@ def run_scan(args: argparse.Namespace) -> int:
             summary = sast_results.get("summary", {})
 
             if vulnerabilities:
+                has_issues = True
                 log.warning(f"Found {len(vulnerabilities)} potential security vulnerabilities:")
                 severity_order = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]
 
@@ -188,28 +221,58 @@ def run_scan(args: argparse.Namespace) -> int:
                         if hasattr(vuln["vulnerability_type"], "value")
                         else vuln["vulnerability_type"]
                     )
-                    print(f"[{severity}] {vuln_type} - {vuln['file_path']}:{vuln['line_number']}")
-                    print(f"  {vuln['description']}")
-                    if output_format == "verbose":
-                        print(f"  Recommendation: {vuln['recommendation']}")
-                        print("  Code snippet:")
-                        for line in vuln["code_snippet"].split("\n"):
-                            print(f"    {line}")
-                        print()
+                    
+                    # Add to issues list for JSON output
+                    issue = {
+                        "file": vuln['file_path'],
+                        "line": vuln['line_number'],
+                        "type": vuln_type,
+                        "severity": severity.lower(),
+                        "title": f"{vuln_type} vulnerability",
+                        "description": vuln['description'],
+                        "recommendation": vuln['recommendation'],
+                        "code_snippet": vuln['code_snippet']
+                    }
+                    all_issues.append(issue)
+                    
+                    if output_format != "json":
+                        print(f"[{severity}] {vuln_type} - {vuln['file_path']}:{vuln['line_number']}")
+                        print(f"  {vuln['description']}")
+                        if output_format == "verbose":
+                            print(f"  Recommendation: {vuln['recommendation']}")
+                            print("  Code snippet:")
+                            for line in vuln["code_snippet"].split("\n"):
+                                print(f"    {line}")
+                            print()
 
-                if scan_type == "sast":
+                if scan_type == "sast" and output_format != "json":
                     return 1  # Exit with error if vulnerabilities found
             else:
                 log.info("No security vulnerabilities found.")
 
             # Print summary
-            if summary:
+            if summary and output_format != "json":
                 print(f"\nSummary: {summary['total_vulnerabilities']} vulnerabilities found")
                 print(f"Files scanned: {summary['files_scanned']}")
                 if summary["severity_breakdown"]:
                     print("Severity breakdown:")
                     for severity, count in summary["severity_breakdown"].items():
                         print(f"  {severity}: {count}")
+
+        # Output JSON format if requested
+        if output_format == "json":
+            import json
+            output = {
+                "scan_type": scan_type,
+                "target_path": target_path,
+                "issues": all_issues,
+                "summary": {
+                    "total_issues": len(all_issues),
+                    "has_issues": has_issues
+                }
+            }
+            print(json.dumps(output, indent=2))
+            return 1 if has_issues else 0
 
         log.info("Scan completed successfully.")
         return 0
@@ -406,7 +469,8 @@ def run_fix_command(config: dict[str, Any], args: argparse.Namespace) -> int:
 
     # Load scan results
     try:
-        with scan_results_path.open("r", encoding="utf-8") as f:
+        # Use utf-8-sig to handle BOM (Byte Order Mark) from Windows editors
+        with scan_results_path.open("r", encoding="utf-8-sig") as f:
             scan_data = json.load(f)
     except Exception as exc:
         log.exception("Failed to load scan results: %s", exc)
@@ -485,52 +549,148 @@ def run_fix_command(config: dict[str, Any], args: argparse.Namespace) -> int:
 
 def _apply_fix_to_issue(lines: list[str], issue: dict[str, Any]) -> bool:
     """Apply a fix for a specific issue. Returns True if fix was applied."""
+    import re
+    
     title = issue.get("title", "").lower()
     issue_type = issue.get("type", "")
     line_num = issue.get("line", 0) - 1  # Convert to 0-based indexing
 
-    # Fix hardcoded secrets by moving to environment variables
+    if line_num >= len(lines):
+        return False
+
+    line = lines[line_num]
+    indent = len(line) - len(line.lstrip())
+    indent_str = " " * indent
+
+    # ===== SQL INJECTION AUTO-FIX =====
+    if "sql" in title.lower() and "injection" in title.lower():
+        # Pattern 1: SELECT with % formatting: query = "SELECT ... WHERE id = %s" % uid
+        match = re.search(r'(\w+)\s*=\s*["\'](.*(SELECT|INSERT|UPDATE|DELETE).*\%s.*)["\'].*\%\s*(\w+)', line, re.IGNORECASE)
+        if match:
+            var_name = match.group(1)
+            query_template = match.group(2)
+            param_var = match.group(4)
+            
+            # Replace %s with ?
+            safe_query = query_template.replace("%s", "?")
+            
+            # Generate fix
+            lines[line_num] = f'{indent_str}{var_name} = "{safe_query}"'
+            lines.insert(line_num + 1, f'{indent_str}{var_name}_params = ({param_var},)')
+            return True
+        
+        # Pattern 2: Multiple parameters with tuple formatting
+        match = re.search(r'(\w+)\s*=\s*["\'](.*(SELECT|INSERT|UPDATE|DELETE).*)["\'].*\%\s*\(([^)]+)\)', line, re.IGNORECASE)
+        if match:
+            var_name = match.group(1)
+            query_template = match.group(2)
+            params_str = match.group(4)
+            
+            # Count %s occurrences
+            param_count = query_template.count('%s')
+            safe_query = query_template.replace("%s", "?")
+            
+            lines[line_num] = f'{indent_str}{var_name} = "{safe_query}"'
+            lines.insert(line_num + 1, f'{indent_str}{var_name}_params = ({params_str})')
+            return True
+        
+        # Pattern 3: String concatenation with +
+        match = re.search(r'(\w+)\s*=\s*["\'](.*(SELECT|INSERT|UPDATE|DELETE).*)["\'].*\+\s*(\w+)', line, re.IGNORECASE)
+        if match:
+            var_name = match.group(1)
+            query_template = match.group(2)
+            param_var = match.group(4)
+            
+            # Add ? placeholder
+            safe_query = query_template + " ?"
+            
+            lines[line_num] = f'{indent_str}{var_name} = "{safe_query}"'
+            lines.insert(line_num + 1, f'{indent_str}{var_name}_params = ({param_var},)')
+            return True
+
+    # ===== COMMAND INJECTION AUTO-FIX =====
+    if "command" in title.lower() and "injection" in title.lower():
+        # Pattern 1: os.system with string concatenation
+        match = re.search(r'os\.system\s*\(\s*["\']([^"\']+)["\'].*\+\s*(\w+)\s*\)', line)
+        if match:
+            command = match.group(1).strip()
+            var_name = match.group(2)
+            
+            # Split command into parts
+            cmd_parts = command.split()
+            if cmd_parts:
+                # Transform to subprocess.run with list
+                args_list = ", ".join([f"'{part}'" for part in cmd_parts] + [var_name])
+                lines[line_num] = f'{indent_str}subprocess.run([{args_list}], check=True)'
+                
+                # Add import if not present
+                if not any('import subprocess' in l for l in lines[:line_num]):
+                    # Find import block
+                    import_idx = 0
+                    for i, l in enumerate(lines):
+                        if l.strip().startswith('import ') or l.strip().startswith('from '):
+                            import_idx = i + 1
+                    lines.insert(import_idx, 'import subprocess')
+                
+                return True
+        
+        # Pattern 2: os.system with f-string or format
+        match = re.search(r'os\.system\s*\(\s*["\']([^"\']+)["\']', line)
+        if match and ('+' in line or '{' in line):
+            command = match.group(1).strip()
+            cmd_parts = command.split()
+            
+            if cmd_parts:
+                # Extract variable from concatenation
+                var_match = re.search(r'\+\s*(\w+)', line)
+                if var_match:
+                    var_name = var_match.group(1)
+                    args_list = ", ".join([f"'{part}'" for part in cmd_parts] + [var_name])
+                    lines[line_num] = f'{indent_str}subprocess.run([{args_list}], check=True)'
+                    
+                    # Add import if needed
+                    if not any('import subprocess' in l for l in lines[:line_num]):
+                        import_idx = 0
+                        for i, l in enumerate(lines):
+                            if l.strip().startswith('import ') or l.strip().startswith('from '):
+                                import_idx = i + 1
+                        lines.insert(import_idx, 'import subprocess')
+                    
+                    return True
+
+    # ===== HARDCODED SECRETS FIX =====
     if "hardcoded" in title and "secret" in title:
-        if line_num < len(lines):
-            line = lines[line_num]
-            # Look for patterns like SECRET_KEY = "value" or API_KEY = 'value'
-            import re
-            pattern = r'(\w+)\s*=\s*["\']([^"\']+)["\']'
-            match = re.search(pattern, line)
-            if match:
-                var_name = match.group(1)
-                # Replace with environment variable
-                lines[line_num] = f'{var_name} = os.getenv("{var_name}", "")'
-                return True
+        # Look for patterns like SECRET_KEY = "value" or API_KEY = 'value'
+        pattern = r'(\w+)\s*=\s*["\']([^"\']+)["\']'
+        match = re.search(pattern, line)
+        if match:
+            var_name = match.group(1)
+            # Replace with environment variable
+            lines[line_num] = f'{indent_str}{var_name} = os.getenv("{var_name}", "")'
+            return True
 
-    # Fix weak cryptography (MD5 -> SHA-256)
+    # ===== WEAK CRYPTO FIX =====
     if "md5" in title.lower() or "weak crypto" in title.lower():
-        if line_num < len(lines):
-            line = lines[line_num]
-            if "md5" in line.lower():
-                lines[line_num] = line.replace("md5", "sha256").replace("MD5", "SHA256")
-                return True
+        if "md5" in line.lower():
+            lines[line_num] = line.replace("md5", "sha256").replace("MD5", "SHA256")
+            return True
 
-    # Fix insecure random usage
+    # ===== INSECURE RANDOM FIX =====
     if "insecure random" in title.lower() or "weak random" in title.lower():
-        if line_num < len(lines):
-            line = lines[line_num]
-            if "random." in line and "random.choice" in line:
-                lines[line_num] = line.replace("random.", "secrets.")
-                return True
-
-    # Fix command injection by adding IP validation
-    if "command injection" in title.lower():
-        if line_num < len(lines):
-            line = lines[line_num]
-            # Look for subprocess calls with IP addresses
-            if "subprocess" in line and ("ip" in line.lower() or "iptables" in line.lower()):
-                # Add IP validation before the subprocess call
-                if line_num > 0:
-                    prev_line = lines[line_num - 1]
-                    if "ipaddress.ip_address" not in prev_line:
-                        lines.insert(line_num, f"    ipaddress.ip_address({line.split('ip')[1].split()[0] if 'ip' in line else 'ip_addr'})")
-                        return True
+        if "random." in line:
+            lines[line_num] = line.replace("random.random()", "secrets.token_hex(16)")
+            lines[line_num] = lines[line_num].replace("random.randint", "secrets.randbelow")
+            lines[line_num] = lines[line_num].replace("random.choice", "secrets.choice")
+            
+            # Add import if needed
+            if not any('import secrets' in l for l in lines[:line_num]):
+                import_idx = 0
+                for i, l in enumerate(lines):
+                    if l.strip().startswith('import ') or l.strip().startswith('from '):
+                        import_idx = i + 1
+                lines.insert(import_idx, 'import secrets')
+            
+            return True
 
     return False
 

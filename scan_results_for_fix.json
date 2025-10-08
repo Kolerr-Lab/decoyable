@@ -1,0 +1,36 @@
+{
+  "issues": [
+    {
+      "file": "test_after_autofix.py",
+      "line": 8,
+      "type": "SQL_INJECTION",
+      "severity": "high",
+      "title": "sql injection vulnerability",
+      "description": "SQL query uses string concatenation"
+    },
+    {
+      "file": "test_after_autofix.py",
+      "line": 13,
+      "type": "COMMAND_INJECTION",
+      "severity": "critical",
+      "title": "command injection vulnerability",
+      "description": "os.system with string concatenation"
+    },
+    {
+      "file": "test_after_autofix.py",
+      "line": 18,
+      "type": "SQL_INJECTION",
+      "severity": "high",
+      "title": "sql injection vulnerability",
+      "description": "SQL query uses string concatenation"
+    },
+    {
+      "file": "test_after_autofix.py",
+      "line": 22,
+      "type": "SQL_INJECTION",
+      "severity": "high",
+      "title": "sql injection vulnerability",
+      "description": "SQL query uses string concatenation"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+﻿2025-10-08 04:52:37 WARNING [__main__] Found 4 potential security vulnerabilities:
+{
+  "scan_type": "sast",
+  "target_path": "test_before_autofix.py",
+  "issues": [
+    {
+      "file": "test_before_autofix.py",
+      "line": 13,
+      "type": "COMMAND_INJECTION",
+      "severity": "critical",
+      "title": "COMMAND_INJECTION vulnerability",
+      "description": "Potential command injection vulnerability - unsafe command execution detected",
+      "recommendation": "Avoid command injection:\n1. Use subprocess.run() with list of arguments (not string)\n2. Never use shell=True unless absolutely necessary\n3. Validate/whitelist all user input\n\u2705 subprocess.run(['cmd', 'arg1', 'arg2'], check=True)\n\u274c os.system(f'cmd {user_input}')",
+      "code_snippet": "  11: # Test 2: Command Injection with os.system\n  12: def ping_server(host):\n  13:     os.system(\"ping -c 1 \" + host)\n  14:     return \"Done\"\n  15: "
+    },
+    {
+      "file": "test_before_autofix.py",
+      "line": 8,
+      "type": "SQL_INJECTION",
+      "severity": "high",
+      "title": "SQL_INJECTION vulnerability",
+      "description": "Potential SQL injection vulnerability - SQL query uses string concatenation or formatting",
+      "recommendation": "Use parameterized queries with ? placeholders or prepared statements instead of string concatenation/formatting",
+      "code_snippet": "   6: # Test 1: SQL Injection with % formatting\n   7: def get_user_data(user_id):\n   8:     query = \"SELECT * FROM users WHERE id = %s\" % user_id\n   9:     return query\n  10: "
+    },
+    {
+      "file": "test_before_autofix.py",
+      "line": 18,
+      "type": "SQL_INJECTION",
+      "severity": "high",
+      "title": "SQL_INJECTION vulnerability",
+      "description": "Potential SQL injection vulnerability - SQL query uses string concatenation or formatting",
+      "recommendation": "Use parameterized queries with ? placeholders or prepared statements instead of string concatenation/formatting",
+      "code_snippet": "  16: # Test 3: Multiple SQL injections\n  17: def search_data(term):\n  18:     query = \"SELECT * FROM products WHERE name = '%s'\" % term\n  19:     return query\n  20: "
+    },
+    {
+      "file": "test_before_autofix.py",
+      "line": 22,
+      "type": "SQL_INJECTION",
+      "severity": "high",
+      "title": "SQL_INJECTION vulnerability",
+      "description": "Potential SQL injection vulnerability - SQL query uses string concatenation or formatting",
+      "recommendation": "Use parameterized queries with ? placeholders or prepared statements instead of string concatenation/formatting",
+      "code_snippet": "  20: \n  21: def update_user(user_id, name):\n  22:     query = \"UPDATE users SET name = '%s' WHERE id = %s\" % (name, user_id)\n  23:     return query\n  24: "
+    }
+  ],
+  "summary": {
+    "total_issues": 4,
+    "has_issues": true
+  }
+}
