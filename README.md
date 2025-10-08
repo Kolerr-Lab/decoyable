@@ -679,11 +679,17 @@ For the best development experience, use the **DECOYABLE VS Code Extension**:
 For traditional CLI usage or server deployment:
 
 ```bash
-git clone https://github.com/your-org/decoyable.git
-cd decoyable
-pip install -e .
-cp .env.example .env
-# Edit .env with your configuration
+# Install from PyPI
+pip install decoyable
+
+# Optional: Set up .env for AI providers (OpenAI, Claude)
+# Create .env file with your API keys if desired
+# OPENAI_API_KEY=sk-...
+# ANTHROPIC_API_KEY=sk-ant-...
+
+# Or just use FREE local AI with Ollama (no .env needed!)
+curl -fsSL https://ollama.com/install.sh | sh  # macOS/Linux
+ollama pull llama3.1:8b
 ```
 
 ### Basic Usage
