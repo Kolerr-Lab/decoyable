@@ -59,16 +59,26 @@ class SASTScanner:
             # SQL Injection patterns
             "sql_injection": {
                 "patterns": [
-                    r"execute\s*\(\s*.*\+.*\)",
-                    r"cursor\.execute\s*\(\s*.*\%.*\)",
-                    r"SELECT.*WHERE.*\+",
-                    r"INSERT.*VALUES.*\+",
-                    r"UPDATE.*SET.*\+",
+                    r"execute\s*\(\s*.*\+.*\)",  # db.execute with + concatenation
+                    r"cursor\.execute\s*\(\s*.*\+.*\)",  # cursor.execute with + concatenation
+                    r"\.execute\s*\(\s*.*\%.*\)",  # any .execute with % string formatting
+                    r"SELECT.*WHERE.*\+",  # SELECT with + concatenation
+                    r"SELECT.*WHERE.*\%\s",  # SELECT with % formatting
+                    r"INSERT.*VALUES.*\+",  # INSERT with + concatenation
+                    r"INSERT.*VALUES.*\%\s",  # INSERT with % formatting
+                    r"UPDATE.*SET.*\+",  # UPDATE with + concatenation
+                    r"UPDATE.*SET.*\%\s",  # UPDATE with % formatting
+                    r"DELETE.*WHERE.*\+",  # DELETE with + concatenation
+                    r"DELETE.*WHERE.*\%\s",  # DELETE with % formatting
+                    r'["\']SELECT.*\%s["\'].*\%',  # String formatting with SQL query
+                    r'["\']INSERT.*\%s["\'].*\%',  # String formatting with SQL query
+                    r'["\']UPDATE.*\%s["\'].*\%',  # String formatting with SQL query
+                    r'["\']DELETE.*\%s["\'].*\%',  # String formatting with SQL query
                 ],
                 "type": VulnerabilityType.SQL_INJECTION,
                 "severity": VulnerabilitySeverity.HIGH,
-                "description": "Potential SQL injection vulnerability",
-                "recommendation": "Use parameterized queries or prepared statements",
+                "description": "Potential SQL injection vulnerability - SQL query uses string concatenation or formatting",
+                "recommendation": "Use parameterized queries with ? placeholders or prepared statements instead of string concatenation/formatting",
             },
             # XSS patterns
             "xss": {
@@ -86,16 +96,20 @@ class SASTScanner:
             # Command injection patterns
             "command_injection": {
                 "patterns": [
-                    r"os\.system\s*\(",
-                    r"subprocess\.call\s*\(",
-                    r"subprocess\.run\s*\(",
-                    r"os\.popen\s*\(",
-                    r"exec\s*\(",
+                    r"os\.system\s*\(",  # os.system is inherently unsafe
+                    r"subprocess\.call\s*\(\s*[^,]*\+",  # subprocess.call with string concatenation
+                    r"subprocess\.run\s*\(\s*[^,]*\+",  # subprocess.run with string concatenation
+                    r"subprocess\.call\s*\([^)]*shell\s*=\s*True",  # subprocess.call with shell=True
+                    r"subprocess\.run\s*\([^)]*shell\s*=\s*True",  # subprocess.run with shell=True
+                    r"subprocess\.Popen\s*\([^)]*shell\s*=\s*True",  # subprocess.Popen with shell=True
+                    r"os\.popen\s*\(",  # os.popen is deprecated and unsafe
+                    r"exec\s*\(",  # exec can execute arbitrary code
+                    r"eval\s*\(",  # eval can execute arbitrary code
                 ],
                 "type": VulnerabilityType.COMMAND_INJECTION,
                 "severity": VulnerabilitySeverity.CRITICAL,
-                "description": "Potential command injection vulnerability",
-                "recommendation": "Validate and sanitize user input, use safe APIs",
+                "description": "Potential command injection vulnerability - unsafe command execution detected",
+                "recommendation": "Use subprocess.run() with a list of arguments (not string), avoid shell=True, validate/whitelist input. For os.system, migrate to subprocess.run(['cmd', 'arg1', 'arg2']) with proper input validation.",
             },
             # Path traversal patterns
             "path_traversal": {
