@@ -31,7 +31,7 @@
 
 ## 🚀 Quick Start (2 minutes)
 
-`ash
+`Bash
 # Install from PyPI
 pip install decoyable
 
@@ -48,7 +48,7 @@ decoyable scan all
 
 **8 AI systems analyze your code in 0.43 seconds:**
 
-`ash
+`Bash
 # Run comprehensive AI analysis with live dashboard
 decoyable ai-analyze . --dashboard
 
@@ -102,19 +102,19 @@ DECOYABLE scanned its own codebase and found **24 security vulnerabilities** inc
 ## ⚡ Installation
 
 ### PyPI (Recommended)
-`ash
+`Bash
 pip install decoyable
 decoyable scan all
 `
 
 ### Docker
-`ash
+`Bash
 docker-compose up -d
 curl http://localhost:8000/api/v1/health
 `
 
 ### From Source
-`ash
+`Bash
 git clone https://github.com/Kolerr-Lab/supper-decoyable.git
 cd supper-decoyable
 pip install -r requirements.txt
@@ -124,7 +124,7 @@ python -m decoyable.core.main scan all
 ## 🛠️ Usage Guide
 
 ### Command Line
-`ash
+`Bash
 # Show help
 decoyable --help
 
@@ -140,7 +140,7 @@ decoyable ai-status       # Check AI providers
 `
 
 ### Web API
-`ash
+`Bash
 # Start FastAPI server
 uvicorn decoyable.api.app:app --reload
 
