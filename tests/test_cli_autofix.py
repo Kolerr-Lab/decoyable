@@ -1,5 +1,10 @@
-# Test file for v1.1.1 auto-fix features
-# CLI tool with command injection vulnerabilities
+
+"""
+Test file for v1.1.1 auto-fix features.
+NOTE: This file contains intentional use of dangerous patterns (os.system, subprocess with shell=True, etc.)
+for the purpose of testing, demonstration, and validation of security scanners. These are NOT used in production code.
+CLI tool with command injection vulnerabilities
+"""
 
 import os
 import argparse

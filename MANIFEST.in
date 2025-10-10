@@ -1,0 +1,4 @@
+# MANIFEST.in for DECOYABLE
+# Exclude all test files and directories from source and binary distributions
+exclude tests/*
+prune tests

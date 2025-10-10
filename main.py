@@ -23,7 +23,7 @@ load_dotenv()
 
 # Package / app metadata
 APP_NAME = "decoyable"
-VERSION = "1.2.1"
+VERSION = "1.2.2"
 
 
 def setup_logging(level: str = "INFO", logfile: Path | None = None) -> None:

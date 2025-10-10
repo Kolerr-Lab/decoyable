@@ -159,6 +159,12 @@ DECOYABLE includes a **VS Code extension** for real-time security scanning:
 
 ## 🏆 Key Achievements
 
+## ⚠️ Security Note: Test Files and Dangerous Patterns
+
+Some files in the `tests/` directory intentionally use dangerous patterns (such as `os.system`, `subprocess` with `shell=True`, `eval`, and `exec`) for the purpose of testing, demonstration, and validation of security scanners. **These patterns are NOT present in production code or distributed packages.**
+
+For more details, see [SECURITY.md](SECURITY.md).
+
 - **🔬 Scientific Validation**: 92% test coverage, extreme performance testing
 - **🏢 Enterprise Ready**: PostgreSQL, Redis, Kafka, Docker orchestration
 - **🤖 AI Integration**: Multi-provider LLM with intelligent fallback

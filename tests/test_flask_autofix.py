@@ -1,5 +1,10 @@
-# Test file for v1.1.1 auto-fix features
-# Flask app with SQL injection and command injection vulnerabilities
+
+"""
+Test file for v1.1.1 auto-fix features.
+NOTE: This file contains intentional use of dangerous patterns (os.system, subprocess with shell=True, etc.)
+for the purpose of testing, demonstration, and validation of security scanners. These are NOT used in production code.
+Flask app with SQL injection and command injection vulnerabilities
+"""
 
 from flask import Flask, request
 import os

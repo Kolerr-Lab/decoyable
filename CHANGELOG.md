@@ -1,3 +1,16 @@
+# [1.2.2] - 2025-10-10
+### Added
+- Comments to all test/demo files clarifying intentional use of dangerous patterns for testing only
+- SECURITY.md with policy on test file patterns and production code safety
+- MANIFEST.in and setup.cfg to exclude tests from all production/distribution packages
+- Security note in README referencing SECURITY.md
+
+### Changed
+- Version bumped to 1.2.2 in all relevant files
+
+### Fixed
+- Ensured all dangerous patterns are only present in test files, not production code
+
 # Changelog
 
 All notable changes to this project will be documented in this file.

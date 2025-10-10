@@ -1,5 +1,9 @@
-# Simple test file for auto-fix demonstration
-# This file will be automatically fixed
+
+"""
+Test file for auto-fix demonstration.
+NOTE: This file contains intentional use of dangerous patterns (os.system, subprocess with shell=True, etc.)
+for the purpose of testing, demonstration, and validation of security scanners. These are NOT used in production code.
+"""
 
 import os
 import subprocess

@@ -1,8 +1,9 @@
 """
 Test script for AI integration with all providers.
+NOTE: This file contains intentional use of dangerous patterns (os.system, subprocess with shell=True, etc.)
+for the purpose of testing, demonstration, and validation of security scanners. These are NOT used in production code.
 Tests: Ollama (Gemma 3:12b), OpenAI, Phi-3, Pattern-based
 """
-
 import asyncio
 import logging
 from dotenv import load_dotenv

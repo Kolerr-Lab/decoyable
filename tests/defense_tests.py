@@ -1,6 +1,5 @@
 """
 Defense Tests for DECOYABLE Cybersecurity Platform
-
 This module contains security-focused tests that validate the platform's
 defense capabilities, vulnerability scanning effectiveness, compliance checks,
 and attack pattern detection. These tests ensure DECOYABLE maintains its
@@ -9,6 +8,17 @@ security posture and effectively identifies threats.
 
 import asyncio
 import json
+"""
+Defense Tests for DECOYABLE Cybersecurity Platform
+
+NOTE: This file contains intentional use of dangerous patterns (os.system, subprocess with shell=True, etc.)
+for the purpose of testing, demonstration, and validation of security scanners. These are NOT used in production code.
+
+This module contains security-focused tests that validate the platform's
+defense capabilities, vulnerability scanning effectiveness, compliance checks,
+and attack pattern detection. These tests ensure DECOYABLE maintains its
+security posture and effectively identifies threats.
+"""
 import os
 import tempfile
 from pathlib import Path

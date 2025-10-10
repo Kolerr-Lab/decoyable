@@ -1,5 +1,9 @@
-# Comprehensive test file for engineer's test cases
-# This file contains all 4 test cases
+
+"""
+Comprehensive test file for engineer's test cases.
+NOTE: This file contains intentional use of dangerous patterns (os.system, subprocess with shell=True, etc.)
+for the purpose of testing, demonstration, and validation of security scanners. These are NOT used in production code.
+"""
 
 import os
 import hashlib
