@@ -1,89 +1,107 @@
 ﻿# Decoyable
 
-> Open-source application security platform — secrets detection, SAST, dependency auditing, and active deception defense.
+**Application security platform with adaptive deception defense.**  
+Scan for secrets, SAST vulnerabilities, and CVEs — then deploy self-learning honeypots that profile and waste attackers' time.
 
 [![CI](https://github.com/Kolerr-Lab/decoyable/actions/workflows/ci.yml/badge.svg)](https://github.com/Kolerr-Lab/decoyable/actions)
-[![License: BUSL-1.1](https://img.shields.io/badge/license-BUSL--1.1-orange.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
 [![PyPI](https://img.shields.io/pypi/v/decoyable.svg)](https://pypi.org/project/decoyable/)
-[![Security Policy](https://img.shields.io/badge/security-policy-informational.svg)](SECURITY.md)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://python.org)
+[![License: BUSL-1.1](https://img.shields.io/badge/license-BUSL--1.1-orange.svg)](LICENSE)
+[![Security](https://img.shields.io/badge/security-policy-informational.svg)](SECURITY.md)
 
 ---
 
-## Overview
+## What it does
 
-Decoyable is a security scanning and active defense platform built for engineering teams that need production-grade threat detection without operational complexity. It runs as a CLI tool, a REST API, or a VS Code extension.
+Most security tools stop at detection. Decoyable adds an active layer: after scanning your code, it can deploy adaptive honeypots that recognize attacker skill level (script kiddie → intermediate → advanced → elite), serve increasingly realistic decoys, and feed all activity into an AI threat intelligence pipeline.
 
-- **Secrets scanning** — detects API keys, tokens, and credentials before they reach version control
-- **SAST** — identifies injection, traversal, and logic vulnerabilities across Python codebases
-- **Dependency auditing** — flags known CVEs in third-party packages
-- **Active defense** — adaptive honeypots and AI-driven threat classification
+**Scan layer:**
+- Secrets scanner — AWS, GitHub, Slack, Google, and custom credential patterns; false-positive reduction via confidence scoring
+- SAST — 13 vulnerability classes: SQL injection, XSS, command injection, path traversal, SSRF, XXE, insecure deserialization, weak crypto, eval usage, and more
+- Dependency auditing — CVE lookup against the full dependency tree
+
+**Defense layer:**
+- Adaptive honeypots — decoy configuration mutates based on observed attacker tooling and behavior
+- Attacker profiling — builds `AttackerProfile` objects tracking skill level, tools used, persistence score, and time-to-detection
+- AI threat classification — routes through Ollama → OpenAI → Claude → Phi-3 → rule-based fallback; always works without an API key
+- Kafka streaming — high-volume attack events pushed to configurable topics for SIEM integration
 
 ---
 
-## Installation
-
-### PyPI
+## Quick start
 
 ```bash
 pip install decoyable
-```
 
-### Docker
+# Scan the current directory
+decoyable scan all
 
-```bash
+# Start the API + honeypot stack
 docker compose up -d
 curl http://localhost:8000/api/v1/health
 ```
 
-### From source
+---
+
+## Scan coverage
+
+| Category | What's detected |
+|---|---|
+| **Secrets** | AWS Access Key / Secret, GitHub tokens (`ghp_`, `gho_`, `ghs_`, legacy), Slack (`xox*`), Google API Key, custom patterns |
+| **SAST** | SQL injection, XSS, command injection, path traversal, SSRF, XXE, insecure deserialization, weak crypto, `eval()`, insecure HTTP, debug flags, hardcoded credentials, insecure random |
+| **Dependencies** | Known CVEs in third-party packages, with severity and remediation |
+| **Configuration** | Debug mode enabled in production, plaintext secrets in environment |
+
+Findings include file path, line number, CWE ID, severity, confidence score, and remediation guidance.
+
+---
+
+## CLI reference
 
 ```bash
-git clone https://github.com/Kolerr-Lab/decoyable.git
-cd decoyable
-pip install -r requirements.txt
-python -m decoyable.core.main --help
+decoyable scan secrets                      # credential and token detection
+decoyable scan sast                         # static vulnerability analysis
+decoyable scan deps                         # dependency CVE audit
+decoyable scan all                          # all three in sequence
+decoyable scan all --format json            # structured output
+decoyable ai-analyze . --dashboard          # AI threat summary with recommendations
 ```
 
 ---
 
-## Usage
+## REST API
 
-### CLI
+Start the server:
 
 ```bash
-# Scan for hardcoded secrets
-decoyable scan secrets
-
-# Static analysis
-decoyable scan sast
-
-# Dependency CVEs
-decoyable scan deps
-
-# Full scan
-decoyable scan all
-
-# AI-powered analysis with active defense recommendations
-decoyable ai-analyze . --dashboard
+uvicorn decoyable.api.service:app --host 0.0.0.0 --port 8000
 ```
 
-### REST API
+Core endpoints:
 
-```bash
-# Start the API server
-uvicorn decoyable.api.service:app --reload
-
-# Endpoints
+```
 GET  /api/v1/health
-POST /api/v1/scan/all
+POST /api/v1/scan/all        {"path": "/workspace/myapp"}
 POST /api/v1/scan/secrets
+POST /api/v1/scan/sast
+POST /api/v1/scan/deps
 GET  /api/v1/results
 ```
 
-### VS Code Extension
+Authentication uses JWT bearer tokens or API keys. Rate limiting and CORS are configurable via environment variables.
 
-Install from the `vscode-extension/` directory. The extension provides inline security diagnostics, real-time scanning on file save, and an integrated issues panel.
+---
+
+## VS Code extension
+
+The bundled extension (`vscode-extension/`) provides inline diagnostics on file save, a findings panel, and one-click navigation to vulnerable lines. Install locally:
+
+```bash
+cd vscode-extension
+npm install
+npx vsce package
+code --install-extension decoyable-*.vsix
+```
 
 ---
 
@@ -91,51 +109,91 @@ Install from the `vscode-extension/` directory. The extension provides inline se
 
 ```
 decoyable/
-├── api/          # FastAPI application, routers, auth, rate limiting
-├── core/         # Configuration, logging, database, task queue
-├── scanners/     # Secrets, SAST, dependency, behavioral scanners
-├── deception/    # Adaptive honeypot engine
-├── defense/      # LLM-based attack analysis and IP blocking
-├── llm/          # Multi-provider LLM router (OpenAI, Claude, Ollama)
-├── ai/           # Predictive threat intelligence
-└── streaming/    # Kafka integration for real-time event pipelines
+├── api/           FastAPI app — routers, JWT/API-key auth, rate limiting
+├── core/          Config, logging, service registry, task orchestration
+├── scanners/      Secrets, SAST, dependency scanners (async, DI-based)
+├── deception/     Adaptive honeypot engine — profiles attackers, mutates decoys
+├── defense/       IP blocking, behavioral anomaly detection
+├── llm/           Model router: Ollama → OpenAI → Claude → Phi-3 → rule-based
+├── ai/            Predictive threat intelligence, pattern learning
+└── streaming/     Kafka producer/consumer for real-time event pipelines
 ```
 
-Infrastructure: PostgreSQL · Redis · Kafka · Prometheus · Docker
+**Infrastructure:** PostgreSQL (findings storage) · Redis (cache, task queue) · Kafka (event streaming) · Prometheus (metrics) · Docker Compose
+
+**AI model priority** — Decoyable selects the best available provider at startup and falls back automatically:
+
+```
+1. Ollama + Llama 3.1   — local, free, preferred
+2. OpenAI GPT-4         — if OPENAI_API_KEY is set
+3. Anthropic Claude     — if ANTHROPIC_API_KEY is set
+4. Phi-3 local          — lightweight local fallback
+5. Pattern-based        — no LLM required, always available
+```
 
 ---
 
-## Configuration
+## Deployment
 
-Copy `.env.template` to `.env` and set required values:
+### Docker Compose (recommended)
+
+```bash
+cp .env.template .env        # fill in SECRET_KEY, JWT_SECRET_KEY, DATABASE_URL
+docker compose up -d
+```
+
+Services started: `api`, `worker`, `postgres`, `redis`, `kafka`, `prometheus`, `grafana`
+
+### From source
+
+```bash
+git clone https://github.com/Kolerr-Lab/decoyable.git
+cd decoyable
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.template .env        # configure environment
+uvicorn decoyable.api.service:app --reload
+```
+
+---
+
+## Configuration reference
 
 ```bash
 cp .env.template .env
 ```
 
-Key environment variables:
+| Variable | Required | Description |
+|---|---|---|
+| `SECRET_KEY` | Yes | Application secret (min 32 chars) |
+| `JWT_SECRET_KEY` | Yes | JWT signing key (min 32 chars) |
+| `DATABASE_URL` | Yes | PostgreSQL DSN (`postgresql://user@host/db`) |
+| `REDIS_URL` | Yes | Redis DSN (`redis://:pass@host:6379/0`) |
+| `ALLOWED_ORIGINS` | Yes | Comma-separated CORS origins — no wildcards in production |
+| `ALLOWED_HOSTS` | Yes | Comma-separated trusted hostnames |
+| `HONEYPOT_ENABLED` | No | Enable adaptive honeypot engine (default: `true`) |
+| `DECOY_PORTS` | No | Ports to expose as decoys (default: `9001,2222`) |
+| `KAFKA_ENABLED` | No | Enable Kafka event streaming (default: `false`) |
+| `OPENAI_API_KEY` | No | OpenAI key — enables GPT-4 threat analysis |
+| `ANTHROPIC_API_KEY` | No | Anthropic key — Claude fallback provider |
+| `SCANNERS_MIN_CONFIDENCE` | No | Minimum confidence threshold for findings (default: `0.8`) |
+| `SCANNERS_SEVERITY_THRESHOLD` | No | Minimum severity to report: `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` |
 
-| Variable | Description |
-|---|---|
-| `SECRET_KEY` | Application secret key (min 32 chars) |
-| `JWT_SECRET_KEY` | JWT signing key (min 32 chars) |
-| `DATABASE_URL` | PostgreSQL connection string |
-| `REDIS_URL` | Redis connection string |
-| `ALLOWED_ORIGINS` | Comma-separated CORS origins |
+Full variable reference: [`.env.template`](.env.template)
 
 ---
 
 ## Security
 
-Decoyable follows responsible disclosure. See [SECURITY.md](SECURITY.md) for the vulnerability reporting process.
+Decoyable follows responsible disclosure. Report vulnerabilities via [SECURITY.md](SECURITY.md).
 
-Test files under `tests/` intentionally include vulnerable code patterns for scanner validation purposes. These patterns are not present in production code or distributed packages.
+Test files under `tests/` contain intentional vulnerable patterns used for scanner validation. These are excluded from distributed packages.
 
 ---
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, branching conventions, and the pull request process.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for environment setup, branching strategy, and the pull request process.
 
 ---
 
