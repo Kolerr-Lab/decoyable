@@ -102,7 +102,7 @@ jobs:
       - name: Trivy - scan Docker image (OS + lib CVEs)
         id: trivy_image
         if: steps.build.outcome == 'success'
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: decoyable:test
           format: sarif
@@ -112,7 +112,7 @@ jobs:
 
       - name: Trivy - scan IaC (Dockerfile + docker-compose)
         id: trivy_iac
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: config
           scan-ref: .
