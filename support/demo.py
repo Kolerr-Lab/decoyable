@@ -105,7 +105,8 @@ def run_demo_scan(scan_dir):
                 if report.results:
                     print(f"  📁 {py_file.name}:")
                     for finding in report.results:
-                        print(f"    🚨 {finding.secret_type}: {finding.match[:20]}...")
+                        finding_display = f"    🚨 {finding.secret_type}: [REDACTED]"
+                        print(finding_display)
                         total_findings += 1
             except Exception as e:
                 print(f"  ❌ Error scanning {py_file.name}: {e}")

@@ -51,9 +51,11 @@ class CLIService:
                 if findings:
                     self.logger.warning(f"Found {len(findings)} potential secrets:")
                     for finding in findings:
-                        print(f"{finding.filename}:{finding.lineno} [{finding.secret_type}] {finding.masked()}")
+                        line_display = f"{finding.filename}:{finding.lineno} [{finding.secret_type}] {finding.masked()}"
+                        print(line_display)
                         if output_format == "verbose":
-                            print(f"  Context: {finding.context}")
+                            ctx_display = f"  Context: {finding.context}"
+                            print(ctx_display)
                     if scan_type == "secrets":
                         # Store result in database if available
                         if database_service:

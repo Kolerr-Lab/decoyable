@@ -161,9 +161,11 @@ def run_scan(args: argparse.Namespace) -> int:
                     all_issues.append(issue)
                     
                     if output_format != "json":
-                        print(f"{finding.filename}:{finding.lineno} [{finding.secret_type}] {finding.masked()}")
+                        line_display = f"{finding.filename}:{finding.lineno} [{finding.secret_type}] {finding.masked()}"
+                        print(line_display)
                         if output_format == "verbose":
-                            print(f"  Context: {finding.context}")
+                            ctx_display = f"  Context: {finding.context}"
+                            print(ctx_display)
                 
                 if scan_type == "secrets" and output_format != "json":
                     return 1  # Exit with error if secrets found

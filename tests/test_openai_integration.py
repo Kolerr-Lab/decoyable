@@ -34,7 +34,7 @@ async def test_openai_integration():
         print("   Please set OPENAI_API_KEY in your .env file\n")
         return False
     
-    print(f"✅ OpenAI API key detected: {api_key[:20]}...{api_key[-4:]}")
+    print(f"✅ OpenAI API key detected: configured ({len(api_key)} chars)")
     print()
     
     # Test basic OpenAI connectivity

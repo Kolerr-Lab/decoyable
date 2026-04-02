@@ -170,7 +170,8 @@ if __name__ == "__main__":
     files = sys.argv[1:]
     findings = scan_paths(files)
     for f in findings:
-        print(f"{f.filename}:{f.lineno} [{f.secret_type}] {f.masked()}  // {f.context}")
+        display = f"{f.filename}:{f.lineno} [{f.secret_type}] {f.masked()}  // {f.context}"
+        print(display)
 
 
 class SecretScanner:
