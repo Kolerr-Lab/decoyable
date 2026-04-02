@@ -122,14 +122,14 @@ jobs:
           exit-code: "0"
 
       - name: Upload Trivy image SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: steps.trivy_image.outcome == 'success'
         with:
           sarif_file: trivy-image.sarif
           category: trivy-image
 
       - name: Upload Trivy IaC SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: steps.trivy_iac.outcome == 'success'
         with:
           sarif_file: trivy-iac.sarif
