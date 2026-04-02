@@ -12,18 +12,18 @@ pytest==7.4.3
 pytest-asyncio==0.21.1
 pytest-cov==4.1.0
 requests==2.32.4
-aiohttp==3.12.14
+aiohttp>=3.11.0,<4.0.0     # >=3.10.11 fixes zip-bomb CVE-2024-52304
 psycopg2-binary==2.9.9
 redis==4.6.0
 celery==5.3.4
 prometheus-client==0.19.0
 aiokafka==0.8.1  # Optional: for Kafka streaming support
 
-# Security dependencies (v1.2.1+)
-python-jose[cryptography]==3.3.0  # JWT token handling
-passlib[bcrypt]==1.7.4            # Password hashing
+# Security dependencies (v1.2.2+)
+PyJWT>=2.9.0                       # JWT token handling (replaces python-jose - GHSA-cjwg-qfpm-7377)
+passlib[bcrypt]==1.7.4             # Password hashing
 bcrypt==4.1.2                      # Password hashing backend
-cryptography==41.0.7               # Cryptographic operations
+cryptography>=44.0.0               # Fixes: Bleichenbacher (42+), SECT curves (43+), pkcs12 NULL ptr (43+)
 
 # AI/ML dependencies (v1.2.0+)
 # Note: These are optional - DECOYABLE works without them using pattern-based analysis

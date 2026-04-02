@@ -146,18 +146,35 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["critical", "high", "medium", "low", "info"]
+            "enum": [
+              "critical",
+              "high",
+              "medium",
+              "low",
+              "info"
+            ]
           },
-          "default": ["critical", "high", "medium"],
+          "default": [
+            "critical",
+            "high",
+            "medium"
+          ],
           "description": "Filter issues by severity level"
         },
         "decoyable.scanTypes": {
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["secrets", "dependencies", "sast", "all"]
+            "enum": [
+              "secrets",
+              "dependencies",
+              "sast",
+              "all"
+            ]
           },
-          "default": ["all"],
+          "default": [
+            "all"
+          ],
           "description": "Types of scans to perform"
         }
       }
@@ -208,13 +225,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Kolerr-Lab/supper-decoyable"
+    "url": "https://github.com/Kolerr-Lab/decoyable"
   },
   "bugs": {
-    "url": "https://github.com/Kolerr-Lab/supper-decoyable/issues"
+    "url": "https://github.com/Kolerr-Lab/decoyable/issues"
   },
-  "homepage": "https://github.com/Kolerr-Lab/supper-decoyable#readme",
+  "homepage": "https://github.com/Kolerr-Lab/decoyable#readme",
   "author": "Kolerr Lab",
-  "license": "MIT",
-  "publisher": "kolerr-lab"
+  "license": "BUSL-1.1",
+  "publisher": "kolerr-lab",
+  "overrides": {
+    "serialize-javascript": "7.0.5",
+    "flatted": "3.4.2"
+  }
 }

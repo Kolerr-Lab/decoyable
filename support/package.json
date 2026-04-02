@@ -5,5 +5,10 @@
     "@types/vscode": "^1.104.0",
     "@vscode/test-electron": "^2.5.2",
     "mocha": "^11.7.4"
+  },
+  "overrides": {
+    "serialize-javascript": "7.0.5",
+    "glob": "10.5.0",
+    "diff": "8.0.4"
   }
 }

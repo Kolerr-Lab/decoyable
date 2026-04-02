@@ -8,9 +8,9 @@ import os
 from datetime import datetime, timedelta
 from typing import Optional
 
+import jwt as pyjwt
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
 
@@ -78,7 +78,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     
     to_encode.update({"exp": expire, "iat": datetime.utcnow()})
     
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = pyjwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -102,7 +102,7 @@ def decode_access_token(token: str) -> TokenData:
         )
     
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = pyjwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         roles: list = payload.get("roles", [])
         
@@ -115,7 +115,7 @@ def decode_access_token(token: str) -> TokenData:
         
         return TokenData(username=username, roles=roles)
     
-    except JWTError as e:
+    except pyjwt.PyJWTError as e:
         logger.warning(f"JWT validation failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
