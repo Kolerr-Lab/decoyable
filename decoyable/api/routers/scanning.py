@@ -2,11 +2,13 @@
 Scanning router for security scanning operations.
 """
 
+import os
 import time
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from decoyable.core.logging import get_logger
 from decoyable.core.registry import get_service_registry
@@ -16,16 +18,103 @@ router = APIRouter()
 logger = get_logger("api.scanning")
 
 
+def validate_scan_path(path: str) -> Path:
+    """
+    Validate and sanitize scan path to prevent path traversal attacks.
+    
+    Args:
+        path: The path to validate
+        
+    Returns:
+        Resolved Path object
+        
+    Raises:
+        ValueError: If path is invalid or outside allowed directories
+    """
+    try:
+        # Resolve the path to absolute path
+        resolved_path = Path(path).resolve()
+        
+        # Get allowed directories from environment or use defaults
+        allowed_dirs_str = os.getenv("ALLOWED_SCAN_DIRS", "/app,/workspace,/tmp")
+        allowed_dirs = [Path(d.strip()).resolve() for d in allowed_dirs_str.split(",") if d.strip()]
+        
+        # Add current working directory in development
+        if os.getenv("APP_ENV", "development") == "development":
+            allowed_dirs.append(Path.cwd())
+        
+        # Check if resolved path starts with any allowed directory
+        is_allowed = any(
+            str(resolved_path).startswith(str(allowed_dir)) 
+            for allowed_dir in allowed_dirs
+        )
+        
+        if not is_allowed:
+            raise ValueError(
+                f"Path {path} is outside allowed directories. "
+                f"Allowed: {', '.join(str(d) for d in allowed_dirs)}"
+            )
+        
+        # Check if path exists
+        if not resolved_path.exists():
+            raise ValueError(f"Path {path} does not exist")
+        
+        # Additional security: Check for symbolic links that might escape allowed dirs
+        if resolved_path.is_symlink():
+            raise ValueError("Symbolic links are not allowed for security reasons")
+        
+        return resolved_path
+        
+    except Exception as e:
+        logger.error(f"Path validation failed for {path}: {e}")
+        raise ValueError(f"Invalid scan path: {str(e)}")
+
+
 class ScanRequest(BaseModel):
     """Request model for scan endpoints."""
 
-    path: str = Field(..., min_length=1, max_length=4096, description="Path to scan")
-    scan_types: Optional[list[str]] = Field(None, description="Types of scans to perform")
-    async_scan: bool = Field(False, description="Whether to perform scan asynchronously")
+    path: str = Field(
+        ..., 
+        min_length=1, 
+        max_length=4096, 
+        description="Path to scan (must be within allowed directories)"
+    )
+    scan_types: Optional[list[str]] = Field(
+        None, 
+        description="Types of scans to perform"
+    )
+    async_scan: bool = Field(
+        False, 
+        description="Whether to perform scan asynchronously"
+    )
+
+    @validator('path')
+    def validate_path_security(cls, v):
+        """Validate path for security before processing."""
+        # Basic validation - full validation happens in validate_scan_path()
+        if '..' in v:
+            raise ValueError("Path cannot contain '..' for security reasons")
+        if v.startswith('/etc') or v.startswith('/root') or v.startswith('/sys'):
+            raise ValueError("Scanning system directories is not allowed")
+        return v
+
+    @validator('scan_types')
+    def validate_scan_types(cls, v):
+        """Validate scan types are supported."""
+        if v is not None:
+            allowed_types = ['secrets', 'dependencies', 'sast']
+            for scan_type in v:
+                if scan_type not in allowed_types:
+                    raise ValueError(f"Invalid scan type: {scan_type}. Allowed: {allowed_types}")
+        return v
 
     class Config:
         schema_extra = {
-            "example": {"path": "/path/to/scan", "scan_types": ["secrets", "dependencies", "sast"], "async_scan": False}
+            "example": {
+                "path": "/workspace/myproject", 
+                "scan_types": ["secrets", "dependencies", "sast"], 
+                "async_scan": False
+            }
         }
 
 

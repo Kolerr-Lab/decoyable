@@ -12,6 +12,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from decoyable.core.config import Settings
 from decoyable.core.logging import LoggingService, get_logger
 from decoyable.core.registry import ServiceRegistry, get_service_registry
+from decoyable.api.ratelimit import create_rate_limit_middleware
 
 
 class APIService:
@@ -76,19 +77,53 @@ class APIService:
 
     def _add_middleware(self, app: FastAPI) -> None:
         """Add middleware to the FastAPI application."""
-        # CORS middleware
+        # Security headers middleware (add first to apply to all responses)
+        @app.middleware("http")
+        async def add_security_headers(request, call_next):
+            response = await call_next(request)
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["X-XSS-Protection"] = "1; mode=block"
+            response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+            response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+            response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+            return response
+
+        # CORS middleware - FIXED: Only allow specific origins in production
+        import os
+        allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8000").split(",")
+        if self.config.environment == "production":
+            # In production, only allow explicitly configured origins
+            allowed_origins = [origin.strip() for origin in allowed_origins if origin.strip()]
+        else:
+            # In development, allow localhost variants
+            allowed_origins = ["http://localhost:3000", "http://localhost:8000", "http://127.0.0.1:3000", "http://127.0.0.1:8000"]
+        
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],
+            allow_origins=allowed_origins,
             allow_credentials=True,
             allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            allow_headers=["*"],
+            allow_headers=["Authorization", "Content-Type", "X-API-Key"],
+            max_age=3600,
         )
 
-        # Trusted host middleware
+        # Trusted host middleware - FIXED: Only allow specific hosts
+        allowed_hosts = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+        if self.config.environment != "production":
+            allowed_hosts.append("*")  # Only allow wildcard in development
+        
         app.add_middleware(
             TrustedHostMiddleware,
-            allowed_hosts=["*"],
+         
+        
+        # Rate limiting middleware - ADDED for DoS protection
+        rate_limit_factory = create_rate_limit_middleware(
+            default_limit=100,  # 100 requests per minute by default
+            default_window=60   # 60 second window
+        )
+        app.add_middleware(rate_limit_factory(app).__class__, app=app)   allowed_hosts=[host.strip() for host in allowed_hosts],
         )
 
     def _register_routers(self, app: FastAPI) -> None:

@@ -16,9 +16,9 @@ services:
     tmpfs:
       - /tmp
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-app}
-      - REDIS_URL=redis://redis:6379/0
-      - APP_ENV=${APP_ENV:-development}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-app}@db:5432/${POSTGRES_DB:-app}?sslmode=require
+      - REDIS_URL=redis://:@redis:6379/0
+      - APP_ENV=${APP_ENV:-production}
     depends_on:
       - db
       - redis
@@ -30,7 +30,7 @@ services:
     networks:
       - app_network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8000/health || exit 1" ]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -50,14 +50,16 @@ services:
     env_file: .env
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-app}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
       - POSTGRES_DB=${POSTGRES_DB:-app}
+    secrets:
+      - postgres_password
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:
       - db_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -72,22 +74,17 @@ services:
           memory: 128M
     tmpfs:
       - /tmp
-    command:
-      [
-        "redis-server",
-        "--appendonly",
-        "yes",
-        "--requirepass",
-        "$REDIS_PASSWORD",
-      ]
+    # SECURITY FIX: Use config file instead of command line for password
     volumes:
       - redis-data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     secrets:
       - redis_password
     networks:
       - cache_network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -119,8 +116,7 @@ services:
     networks:
       - decoy_network # Isolated network - attackers cannot reach production
     healthcheck:
-      test:
-        ["CMD-SHELL", "curl -f http://localhost:8000/decoy/status || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8000/decoy/status || exit 1" ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -151,8 +147,7 @@ services:
     networks:
       - decoy_network # Isolated network - attackers cannot reach production
     healthcheck:
-      test:
-        ["CMD-SHELL", "curl -f http://localhost:8000/decoy/status || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8000/decoy/status || exit 1" ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -190,17 +185,9 @@ services:
       - app_network
       - db_network
       - cache_network
-    command:
-      [
-        "celery",
-        "-A",
-        "decoyable.tasks",
-        "worker",
-        "--loglevel=info",
-        "--queues=security",
-      ]
+    command: [ "celery", "-A", "decoyable.tasks", "worker", "--loglevel=info", "--queues=security" ]
     healthcheck:
-      test: ["CMD-SHELL", "echo 'OK'"]
+      test: [ "CMD-SHELL", "echo 'OK'" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -210,12 +197,7 @@ services:
   nginx:
     image: nginx:stable-alpine
     entrypoint: []
-    command:
-      [
-        "sh",
-        "-c",
-        "mkdir -p /var/cache/nginx /var/run && nginx -g 'daemon off;'",
-      ]
+    command: [ "sh", "-c", "mkdir -p /var/cache/nginx /var/run && nginx -g 'daemon off;'" ]
     deploy:
       resources:
         limits:
@@ -299,7 +281,7 @@ services:
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
-    profiles: ["kafka"]  # Only start with --profile kafka
+    profiles: [ "kafka" ] # Only start with --profile kafka
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -308,14 +290,14 @@ services:
     networks:
       - app_network
     healthcheck:
-      test: ["CMD", "bash", "-c", "echo 'ruok' | nc localhost 2181"]
+      test: [ "CMD", "bash", "-c", "echo 'ruok' | nc localhost 2181" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
   kafka:
     image: confluentinc/cp-kafka:7.4.0
-    profiles: ["kafka"]  # Only start with --profile kafka
+    profiles: [ "kafka" ] # Only start with --profile kafka
     depends_on:
       zookeeper:
         condition: service_healthy
@@ -334,7 +316,7 @@ services:
     networks:
       - app_network
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -353,6 +335,7 @@ volumes:
   prometheus-data:
   grafana-data:
   kafka_data:
+
 
 networks:
   app_network:

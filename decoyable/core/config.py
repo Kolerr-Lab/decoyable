@@ -93,10 +93,35 @@ class APISettings(BaseSettings):
 class SecuritySettings(BaseSettings):
     """Security configuration settings."""
 
-    secret_key: str = Field(default="dev-secret-key-change-in-production", env="SECRET_KEY")
-    jwt_secret_key: str = Field(default="jwt-secret-key", env="JWT_SECRET_KEY")
+    secret_key: str = Field(..., env="SECRET_KEY", description="Application secret key - MUST be set via environment")
+    jwt_secret_key: str = Field(..., env="JWT_SECRET_KEY", description="JWT secret key - MUST be set via environment")
     jwt_algorithm: str = Field(default="HS256", env="JWT_ALGORITHM")
     jwt_expiration_hours: int = Field(default=24, env="JWT_EXPIRATION_HOURS")
+
+    @validator('secret_key', 'jwt_secret_key')
+    def validate_secret_strength(cls, v, field):
+        """Validate secret keys are strong enough."""
+        if not v:
+            raise ValueError(f"{field.name} must be set")
+        
+        # Check for common weak values
+        weak_values = [
+            "dev-secret-key-change-in-production",
+            "jwt-secret-key",
+            "secret",
+            "password",
+            "changeme",
+            "admin",
+            "test"
+        ]
+        if v.lower() in weak_values:
+            raise ValueError(f"{field.name} must not use default or weak values. Please generate a secure random key.")
+        
+        # Minimum length check
+        if len(v) < 32:
+            raise ValueError(f"{field.name} must be at least 32 characters long")
+        
+        return v
 
 
 class LLMSettings(BaseSettings):

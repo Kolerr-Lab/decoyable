@@ -1,7 +1,7 @@
 ﻿# DECOYABLE - Make Your Code Unhackable
 
 [![CI](https://github.com/Kolerr-Lab/supper-decoyable/actions/workflows/ci.yml/badge.svg)](https://github.com/Kolerr-Lab/supper-decoyable/actions)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-BUSL--1.1-orange.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
 [![PyPI version](https://img.shields.io/pypi/v/decoyable.svg)](https://pypi.org/project/decoyable/)
 [![Downloads](https://img.shields.io/pypi/dm/decoyable.svg)](https://pypi.org/project/decoyable/)
