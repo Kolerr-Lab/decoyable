@@ -16,7 +16,7 @@ aiohttp>=3.11.0,<4.0.0     # >=3.10.11 fixes zip-bomb CVE-2024-52304
 psycopg2-binary==2.9.9
 redis==4.6.0
 celery==5.3.4
-prometheus-client==0.19.0
+prometheus-client==0.24.1
 aiokafka==0.8.1  # Optional: for Kafka streaming support
 
 # Security dependencies (v1.2.2+)
