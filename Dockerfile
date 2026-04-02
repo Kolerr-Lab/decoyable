@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- Build stage ----
-FROM python:3.11-slim AS builder
+FROM python:3.14-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -27,7 +27,7 @@ RUN ${VENV_PATH}/bin/pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # ---- Runtime stage ----
-FROM python:3.11-slim AS runtime
+FROM python:3.14-slim AS runtime
 
 ENV PATH="/opt/venv/bin:${PATH}" \
     PYTHONDONTWRITEBYTECODE=1 \
