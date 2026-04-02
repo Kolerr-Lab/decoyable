@@ -214,7 +214,7 @@
   "dependencies": {},
   "devDependencies": {
     "@types/vscode": "^1.74.0",
-    "@types/node": "16.x",
+    "@types/node": "25.x",
     "@types/mocha": "^10.0.0",
     "eslint": "^8.28.0",
     "@typescript-eslint/eslint-plugin": "^5.42.0",
