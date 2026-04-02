@@ -22,26 +22,9 @@ except ImportError:
     PROJECT_ROOT = Path(__file__).parent.parent.parent
     ENV_FILE = PROJECT_ROOT / ".env"
 
-try:
-    from pydantic import Field, ValidationError, validator
-    from pydantic_settings import BaseSettings
-
-    PYDANTIC_V2 = True
-except ImportError:
-    # Fallback for older versions
-    try:
-        from pydantic import Field, ValidationError, validator
-        from pydantic_settings import BaseSettings
-
-        PYDANTIC_V2 = True
-    except ImportError:
-        # Fallback for very old versions
-        from pydantic import BaseModel as BaseSettings
-        from pydantic import Field
-
-        validator = None
-        ValidationError = Exception
-        PYDANTIC_V2 = False
+from pydantic import Field, ValidationError, field_validator
+from pydantic import FieldValidationInfo
+from pydantic_settings import BaseSettings
 
 
 class DatabaseSettings(BaseSettings):
@@ -93,34 +76,39 @@ class APISettings(BaseSettings):
 class SecuritySettings(BaseSettings):
     """Security configuration settings."""
 
-    secret_key: str = Field(..., env="SECRET_KEY", description="Application secret key - MUST be set via environment")
-    jwt_secret_key: str = Field(..., env="JWT_SECRET_KEY", description="JWT secret key - MUST be set via environment")
+    secret_key: str = Field(default="", env="SECRET_KEY", description="Application secret key - MUST be set via environment for API server")
+    jwt_secret_key: str = Field(default="", env="JWT_SECRET_KEY", description="JWT secret key - MUST be set via environment for API server")
     jwt_algorithm: str = Field(default="HS256", env="JWT_ALGORITHM")
     jwt_expiration_hours: int = Field(default=24, env="JWT_EXPIRATION_HOURS")
 
-    @validator('secret_key', 'jwt_secret_key')
-    def validate_secret_strength(cls, v, field):
-        """Validate secret keys are strong enough."""
+    @field_validator('secret_key', 'jwt_secret_key')
+    @classmethod
+    def validate_secret_strength(cls, v: str, info: FieldValidationInfo) -> str:
+        """Validate secret keys are strong enough when provided."""
         if not v:
-            raise ValueError(f"{field.name} must be set")
-        
+            # Empty is allowed — API layer must enforce presence at startup
+            return v
+
         # Check for common weak values
-        weak_values = [
+        weak_values = {
             "dev-secret-key-change-in-production",
             "jwt-secret-key",
             "secret",
             "password",
             "changeme",
             "admin",
-            "test"
-        ]
+            "test",
+        }
         if v.lower() in weak_values:
-            raise ValueError(f"{field.name} must not use default or weak values. Please generate a secure random key.")
-        
+            raise ValueError(
+                f"{info.field_name} must not use default or weak values. "
+                "Please generate a secure random key."
+            )
+
         # Minimum length check
         if len(v) < 32:
-            raise ValueError(f"{field.name} must be at least 32 characters long")
-        
+            raise ValueError(f"{info.field_name} must be at least 32 characters long")
+
         return v
 
 
@@ -257,8 +245,8 @@ class Settings:
         )
 
         self.security = SecuritySettings(
-            secret_key=os.getenv("SECRET_KEY", "dev-secret-key-change-in-production"),
-            jwt_secret_key=os.getenv("JWT_SECRET_KEY", "jwt-secret-key"),
+            secret_key=os.getenv("SECRET_KEY", ""),
+            jwt_secret_key=os.getenv("JWT_SECRET_KEY", ""),
             jwt_algorithm=os.getenv("JWT_ALGORITHM", "HS256"),
             jwt_expiration_hours=int(os.getenv("JWT_EXPIRATION_HOURS", "24")),
         )

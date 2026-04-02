@@ -187,6 +187,10 @@ class SecretsScanner(BaseScanner):
         for secret_type, pattern in self._patterns:
             matches = pattern.findall(line)
             for match in matches:
+                # Filter out low-entropy strings (separators like ====, ----, etc.)
+                if self._calculate_entropy(match) < 2.0:
+                    continue
+
                 # Calculate confidence based on pattern and context
                 confidence = self._calculate_confidence(match, secret_type, line)
 

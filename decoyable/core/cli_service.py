@@ -68,7 +68,7 @@ class CLIService:
                                     status="success",
                                     results={"findings": findings, "count": len(findings)},
                                     scan_duration=int(time.time() - start_time),
-                                    file_count=len({f["filename"] for f in findings}) if findings else 0,
+                                    file_count=len({f.filename for f in findings}) if findings else 0,
                                 )
                             )
                         return 1  # Exit with error if secrets found

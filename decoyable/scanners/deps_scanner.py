@@ -5,6 +5,7 @@ Dependencies scanner implementation with dependency injection support.
 import ast
 import asyncio
 import os
+import sys
 from dataclasses import dataclass
 from importlib import metadata as importlib_metadata
 from pathlib import Path
@@ -143,63 +144,32 @@ class DependenciesScanner(BaseScanner):
         missing_imports = []
 
         for imp in all_imports:
-            if imp in [
-                "os",
-                "sys",
-                "json",
-                "re",
-                "typing",
-                "pathlib",
-                "collections",
-                "itertools",
-                "functools",
-                "operator",
-                "datetime",
-                "time",
-                "math",
-                "random",
-                "hashlib",
-                "urllib",
-                "http",
-                "socket",
-                "threading",
-                "multiprocessing",
-                "asyncio",
-                "concurrent",
-                "subprocess",
-                "tempfile",
-                "shutil",
-                "glob",
-                "fnmatch",
-                "linecache",
-                "pickle",
-                "copyreg",
-                "copy",
-                "pprint",
-                "reprlib",
-                "enum",
-                "numbers",
-                "cmath",
-                "decimal",
-                "fractions",
-                "statistics",
-                "ast",
-                "inspect",
-                "site",
-                "warnings",
-                "contextlib",
-                "abc",
-                "atexit",
-                "traceback",
-                "gc",
-                "inspect",
-                "site",
-                "warnings",
-                "weakref",
-                "gc",
-                "inspect",
-            ]:
-                continue  # Standard library
+            # Skip Python standard library modules (Python 3.10+ provides sys.stdlib_module_names)
+            stdlib_modules = getattr(sys, "stdlib_module_names", set())
+            if imp in stdlib_modules:
+                continue
+
+            # Also skip the legacy manually curated list for any gaps
+            if imp in {
+                "os", "sys", "json", "re", "typing", "pathlib", "collections",
+                "itertools", "functools", "operator", "datetime", "time", "math",
+                "random", "hashlib", "urllib", "http", "socket", "threading",
+                "multiprocessing", "asyncio", "concurrent", "subprocess", "tempfile",
+                "shutil", "glob", "fnmatch", "linecache", "pickle", "copyreg",
+                "copy", "pprint", "reprlib", "enum", "numbers", "cmath", "decimal",
+                "fractions", "statistics", "ast", "inspect", "site", "warnings",
+                "contextlib", "abc", "atexit", "traceback", "gc", "weakref",
+                "io", "string", "logging", "argparse", "unittest", "dataclasses",
+                "ipaddress", "secrets", "contextvars", "importlib", "tomllib",
+                "__future__", "builtins", "types", "struct", "codecs", "base64",
+                "binascii", "csv", "configparser", "xml", "html", "email",
+                "sqlite3", "zlib", "gzip", "bz2", "lzma", "zipfile", "tarfile",
+                "signal", "mmap", "ctypes", "unittest", "doctest", "pdb",
+                "profile", "cProfile", "timeit", "trace", "queue", "heapq",
+                "bisect", "array", "token", "tokenize", "keyword", "dis",
+                "symtable", "compileall", "py_compile",
+            }:
+                continue
 
             if "." in imp:
                 # Check top-level package
@@ -295,7 +265,8 @@ class DependenciesScanner(BaseScanner):
                     for alias in node.names:
                         imports.add(alias.name.split(".")[0])
                 elif isinstance(node, ast.ImportFrom):
-                    if node.module:
+                    # Skip relative imports (level > 0 means "from .module import ...")
+                    if node.module and node.level == 0:
                         imports.add(node.module.split(".")[0])
 
         except SyntaxError:
@@ -319,7 +290,8 @@ class DependenciesScanner(BaseScanner):
                 for alias in node.names:
                     imports.add(alias.name)
             elif isinstance(node, ast.ImportFrom):
-                if node.module:
+                # Skip relative imports (level > 0 means "from .module import ...")
+                if node.module and node.level == 0:
                     imports.add(node.module)
 
         return imports

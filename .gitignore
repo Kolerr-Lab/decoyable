@@ -158,3 +158,6 @@ npm-packages-offline-cache/
 
 # Keep this file tracked
 !.gitignore
+
+# Local developer reference files (not part of the project)
+command.txt
